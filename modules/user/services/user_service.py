@@ -2,7 +2,6 @@ from sqlalchemy.orm import Session
 
 from core.security import hash_password
 from ..models.user_model import User
-from ..schemas.user_schema import UserRequestSchema
 from ..repositories.user_repository import UserRepository
 
 class UserService:
