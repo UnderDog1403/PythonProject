@@ -28,3 +28,12 @@ async def register_form(
     confirm_password: str = Form(...)
 ):
     return RegisterRequestSchema(email=email, password=password, confirm_password=confirm_password)
+class ChangePasswordRequestSchema(BaseModel):
+    new_password: str
+    confirm_password: str
+class ForgotPasswordRequestSchema(BaseModel):
+    email: EmailStr
+class VerifyForgotPasswordRequestSchema(BaseModel):
+    email: EmailStr
+    otp: str
+

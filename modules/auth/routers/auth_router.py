@@ -1,9 +1,12 @@
+
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 
+
 from ..schemas.auth_schema import LoginResponseSchema, LoginRequestSchema, login_form, RegisterRequestSchema, \
-    register_form
-from core.dependencies import db_dependency
+    register_form, ChangePasswordRequestSchema, ForgotPasswordRequestSchema
+from core.dependencies import db_dependency, user_dependency
 from ..services.auth_service import AuthService
+from fastapi import Header
 
 AuthRouter= APIRouter(
     prefix="/auth",
@@ -40,6 +43,49 @@ def verify_email(
     auth_service = AuthService(db, background_tasks)
     return auth_service.verify_email_token(token)
 
+@AuthRouter.post("/change-password",status_code=status.HTTP_200_OK)
+def change_password(
+        current_user: user_dependency,
+        payload: ChangePasswordRequestSchema,
+        db: db_dependency,
+        background_tasks: BackgroundTasks
+):
+    service = AuthService(db, background_tasks)
+    return service.change_password(
+        current_user.id,
+        payload.new_password,
+        payload.confirm_password
+    )
+@AuthRouter.post("/forgot-password",status_code=status.HTTP_200_OK)
+def forgot_password(
+        payload: ForgotPasswordRequestSchema,
+        db: db_dependency,
+        background_tasks: BackgroundTasks
+):
+    service = AuthService(db, background_tasks)
+    return service.forget_password(payload.email)
+
+@AuthRouter.post("/verify-forgot-password-otp",status_code=status.HTTP_200_OK)
+def verify_forgot_password_otp(
+        payload: ForgotPasswordRequestSchema,
+        db: db_dependency,
+        background_tasks: BackgroundTasks
+):
+    service = AuthService(db, background_tasks)
+    return service.verify_forgot_password_otp(payload.email, payload.otp)
+@AuthRouter.post("/reset-password",status_code=status.HTTP_200_OK)
+def reset_password(
+        payload: ChangePasswordRequestSchema,
+        db: db_dependency,
+        background_tasks: BackgroundTasks,
+        reset_token: str = Header(..., alias="X-Reset-Token"),
+):
+    service = AuthService(db, background_tasks)
+    return service.reset_password(
+        reset_token,
+        payload.new_password,
+        payload.confirm_password
+    )
 
 # @AuthRouter.post('/login/google',response_model=LoginResponseSchema, status_code=status.HTTP_200_OK)
 # def google_login(

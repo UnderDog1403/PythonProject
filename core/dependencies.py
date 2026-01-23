@@ -1,16 +1,14 @@
 from sqlalchemy.orm import Session
 from fastapi import Depends
-from sqlalchemy.sql.annotation import Annotated
 from typing import Annotated
+from core.database import get_db
+from core.security import get_user_current
+from modules.user.models.user_model import User
 
-from core.database import SessionLocal
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
 
 db_dependency = Annotated[Session, Depends(get_db)]
-# auth_dependency = Annotated[id, Depends(AuthService.get_user_current)]
+user_dependency = Annotated[User, Depends(get_user_current)]
+
+

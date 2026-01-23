@@ -1,10 +1,14 @@
+import enum
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, func
+from sqlalchemy import Column, String, Boolean, DateTime, func, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
 
+class UserRoleEnum(str, enum.Enum):
+    user = "user"
+    admin = "admin"
 class User(Base):
     __tablename__ = "users"
 
@@ -12,6 +16,11 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     # password = Column(String, nullable=False)
+    role = Column(
+        Enum(UserRoleEnum, name="user_role_enum"),
+        nullable=False,
+        server_default="user"
+    )
     address = Column(String, nullable=True)
     image = Column(String, nullable=True)
     phone = Column(String(20), nullable=True)

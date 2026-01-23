@@ -4,6 +4,7 @@ from modules.user.models.user_model import User
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from modules.auth.models.auth_models import AuthProvider
+from modules.auth.models.password_reset import PasswordReset
 from alembic import context
 
 # this is the Alembic Config object, which provides
