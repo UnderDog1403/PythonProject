@@ -27,7 +27,7 @@ class PasswordReset(Base):
     )
 
     expired_at = Column(
-        DateTime,
+        DateTime(timezone=True),
         nullable=False
     )
     is_used = Column(

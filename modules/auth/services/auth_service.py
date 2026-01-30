@@ -51,7 +51,8 @@ class AuthService:
                 detail="Email or password is incorrect"
             )
         access_token = create_access_token(
-            id=str(existing_user.id)
+            id=str(existing_user.id),
+            role = existing_user.role.value
         )
         return {
             "access_token": access_token,
@@ -122,7 +123,7 @@ class AuthService:
                 detail="User with this email does not exist"
             )
         otp = ''.join(secrets.choice('0123456789') for _ in range(6))
-        self.db.query(PasswordReset).add(
+        self.db.add(
             PasswordReset(
                 email=email,
                 otp_hash=hash_password(otp),
@@ -142,7 +143,7 @@ class AuthService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid or expired OTP"
             )
-        if password_reset.expired_at < datetime.now(timezone.utc):
+        if password_reset.expired_at <= datetime.now(timezone.utc):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="OTP has expired"

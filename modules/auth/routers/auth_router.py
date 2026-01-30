@@ -1,10 +1,10 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 
-
+from core.security import require_roles
 from ..schemas.auth_schema import LoginResponseSchema, LoginRequestSchema, login_form, RegisterRequestSchema, \
     register_form, ChangePasswordRequestSchema, ForgotPasswordRequestSchema
-from core.dependencies import db_dependency, user_dependency
+from core.dependencies import db_dependency
 from ..services.auth_service import AuthService
 from fastapi import Header
 
@@ -45,14 +45,14 @@ def verify_email(
 
 @AuthRouter.post("/change-password",status_code=status.HTTP_200_OK)
 def change_password(
-        current_user: user_dependency,
         payload: ChangePasswordRequestSchema,
         db: db_dependency,
-        background_tasks: BackgroundTasks
+        background_tasks: BackgroundTasks,
+        current_user=Depends(require_roles(["user", "admin"]))
 ):
     service = AuthService(db, background_tasks)
     return service.change_password(
-        current_user.id,
+        current_user["id"],
         payload.new_password,
         payload.confirm_password
     )
@@ -67,12 +67,13 @@ def forgot_password(
 
 @AuthRouter.post("/verify-forgot-password-otp",status_code=status.HTTP_200_OK)
 def verify_forgot_password_otp(
-        payload: ForgotPasswordRequestSchema,
+        email: str,
+        otp: str,
         db: db_dependency,
         background_tasks: BackgroundTasks
 ):
     service = AuthService(db, background_tasks)
-    return service.verify_forgot_password_otp(payload.email, payload.otp)
+    return service.verify_forgot_password_otp(email, otp)
 @AuthRouter.post("/reset-password",status_code=status.HTTP_200_OK)
 def reset_password(
         payload: ChangePasswordRequestSchema,
