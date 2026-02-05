@@ -19,7 +19,7 @@ def get_categories_paginated(
         db: db_dependency,
         page: int = 1,
         limit: int = 10,
-        current_user=Depends(require_roles(["admin"]))
+        # current_user=Depends(require_roles(["admin", "user"]))
 ):
     category_service = CategoryService(db)
     categories, total, total_page = category_service.get_categories_paginated(page, limit)
@@ -34,7 +34,7 @@ def get_categories_paginated(
 def create_category(
     payload: CategoryCreateSchema,
     db: db_dependency,
-    current_user=Depends(require_roles(["admin"]))
+    # current_user=Depends(require_roles(["admin"]))
 ):
     category_service = CategoryService(db)
     return category_service.create_category(name=payload.name, description=getattr(payload, "description", None))
@@ -45,7 +45,7 @@ def update_category(
     category_id: int,
     payload: CategoryUpdateSchema,
     db: db_dependency,
-    current_user=Depends(require_roles(["admin"]))
+    # current_user=Depends(require_roles(["admin"]))
 ):
     service = CategoryService(db)
     update_data = payload.model_dump(exclude_unset=True)

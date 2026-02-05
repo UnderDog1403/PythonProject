@@ -19,5 +19,10 @@ class UserListResponseSchema(BaseModel):
     total_pages: int
     page: int
     limit: int
-    class Config:
-        from_attributes = True
+class UserUpdateSchema(BaseModel):
+    name: str | None = None
+    address: str | None = None
+    image: str | None = None
+    phone: str | None = None
+class UserUpdateActiveSchema(BaseModel):
+    is_active: bool

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 
 from core.security import require_roles
 from ..schemas.auth_schema import LoginResponseSchema, LoginRequestSchema, login_form, RegisterRequestSchema, \
-    register_form, ChangePasswordRequestSchema, ForgotPasswordRequestSchema
+    register_form, ChangePasswordRequestSchema, ForgotPasswordRequestSchema, VerifyForgotPasswordRequestSchema
 from core.dependencies import db_dependency
 from ..services.auth_service import AuthService
 from fastapi import Header
@@ -67,13 +67,12 @@ def forgot_password(
 
 @AuthRouter.post("/verify-forgot-password-otp",status_code=status.HTTP_200_OK)
 def verify_forgot_password_otp(
-        email: str,
-        otp: str,
+        payload: VerifyForgotPasswordRequestSchema,
         db: db_dependency,
         background_tasks: BackgroundTasks
 ):
     service = AuthService(db, background_tasks)
-    return service.verify_forgot_password_otp(email, otp)
+    return service.verify_forgot_password_otp(payload.email, payload.otp)
 @AuthRouter.post("/reset-password",status_code=status.HTTP_200_OK)
 def reset_password(
         payload: ChangePasswordRequestSchema,

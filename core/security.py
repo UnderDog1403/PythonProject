@@ -66,11 +66,19 @@ def verify_reset_password_token(token: str):
         except JWTError:
             raise ValueError("Invalid token")
 def create_access_token( id: str,role: str, expires_delta: timedelta = None):
-        encode = {'sub': id, 'role': role}
+        encode = {'sub': id, 'role': role, 'type': 'access'}
         if expires_delta:
             expire = datetime.now(timezone.utc) + expires_delta
         else:
             expire = datetime.now(timezone.utc) + timedelta(minutes=30)
+        encode.update({"exp": expire})
+        return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+def create_refresh_token( id: str, role: str, expires_delta: timedelta = None):
+        encode = {'sub': id, 'role': role,'type':'refresh'}
+        if expires_delta:
+            expire = datetime.now(timezone.utc) + expires_delta
+        else:
+            expire = datetime.now(timezone.utc) + timedelta(days=7)
         encode.update({"exp": expire})
         return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 # def verify_google_token(token: str):

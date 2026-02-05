@@ -1,14 +1,20 @@
 from logging.config import fileConfig
 from core.database import Base
-from modules.user.models.user_model import User
+
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from modules.user.models.user_model import User
 from modules.auth.models.auth_models import AuthProvider
 from modules.auth.models.password_reset import PasswordReset
 from modules.product.models.category_model import Category
 from modules.product.models.pizza_model import Pizza
 from modules.product.models.pizza_size_model import PizzaSize
 from modules.product.models.pizza_topping_model import PizzaTopping
+from modules.product.models.pizza_category_model import PizzaCategory
+from modules.product.models.combo_model import Combo
+from modules.product.models.combo_pizza_item_model import ComboPizzaItem
+from modules.product.models.combo_pizza_item_size_model import ComboPizzaItemSize
+from modules.product.models.combo_pizza_item_topping_model import ComboPizzaItemTopping
 from alembic import context
 
 # this is the Alembic Config object, which provides

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from core.dependencies import db_dependency
-from modules.user.schemas.user_schema import UserListResponseSchema
+from modules.user.schemas.user_schema import UserListResponseSchema, UserUpdateSchema, UserResponseSchema, \
+    UserUpdateActiveSchema
 from modules.user.services.user_service import UserService
 
 UserRouter= APIRouter(
@@ -12,10 +13,12 @@ UserRouter= APIRouter(
 def get_users(
     db: db_dependency,
     page: int=1,
-    limit: int=10
+    limit: int=10,
+    order_by: str="id",
+    descending: bool=False
 ):
     user_service = UserService(db)
-    users, total, total_page = user_service.get_users_paginated(page, limit)
+    users, total, total_page = user_service.get_users_paginated(page, limit, order_by, descending)
     return UserListResponseSchema(
         users=users,
         total=total,
@@ -36,3 +39,21 @@ def get_user_by_id(
             detail="User not found"
         )
     return user
+@UserRouter.put("/{user_id}",status_code=status.HTTP_200_OK, response_model=UserResponseSchema)
+def update_user(
+    user_id: str,
+    payload: UserUpdateSchema,
+    db: db_dependency
+):
+    user_service = UserService(db)
+    updated_user = user_service.update_user(user_id, payload.model_dump(exclude_unset=True))
+    return updated_user
+@UserRouter.put("/{user_id}/activate",status_code=status.HTTP_200_OK,response_model=UserResponseSchema)
+def deactivate_user(
+    user_id: str,
+    payload: UserUpdateActiveSchema,
+    db: db_dependency
+):
+    user_service = UserService(db)
+    return  user_service.update_active_status(user_id, payload.is_active)
+

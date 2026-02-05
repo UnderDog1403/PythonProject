@@ -2,11 +2,12 @@ import secrets
 from datetime import datetime, timedelta,timezone
 
 from fastapi import HTTPException,status
+from pydantic import EmailStr
 from sqlalchemy.orm import Session
 from starlette.background import BackgroundTasks
 
 from core.security import verify_password, hash_password, create_access_token, create_verify_token, verify_token, \
-    create_reset_password_token, verify_reset_password_token
+    create_reset_password_token, verify_reset_password_token, create_refresh_token
 from modules.auth.models.auth_models import AuthProvider
 from modules.auth.models.password_reset import PasswordReset
 from modules.auth.repositories.auth_repository import AuthRepository
@@ -54,12 +55,17 @@ class AuthService:
             id=str(existing_user.id),
             role = existing_user.role.value
         )
+        refresh_token = create_refresh_token(
+            id=str(existing_user.id),
+            role = existing_user.role.value
+        )
         return {
             "access_token": access_token,
+            "refresh_token": refresh_token,
             "user": existing_user
         }
 
-    def change_password(self,user_id:int, new_password:str, confirm_password:str):
+    def change_password(self,user_id:str, new_password:str, confirm_password:str):
         if new_password != confirm_password:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -133,7 +139,7 @@ class AuthService:
         self.db.commit()
         send_forgot_password_email(user, background_tasks=self.background_tasks,otp=otp)
         return {"message": "Password reset instructions have been sent to your email"}
-    def verify_forgot_password_otp(self,email: str, otp: str):
+    def verify_forgot_password_otp(self,email: EmailStr, otp: str):
         password_reset = self.db.query(PasswordReset).filter(
             PasswordReset.email==email,
             PasswordReset.is_used==False
@@ -161,15 +167,24 @@ class AuthService:
             "message": "OTP verified successfully"}
 
     def verify_email_token(self, token: str):
-        id= verify_token(token)
-        user=self.user_repo.get_user_by_id(id)
-        if not user:
+        try:
+            id= verify_token(token)
+        except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid or expired token"
             )
+        user=self.user_repo.get_user_by_id(id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User not found"
+            )
         if user.is_verified:
-            return {"message": "Email is already verified"}
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already verified"
+            )
         user.is_verified = True
         self.db.commit()
         return {"message": "Email verified successfully"}
@@ -179,7 +194,13 @@ class AuthService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="New Password and Confirm Password do not match"
             )
-        email = verify_reset_password_token(token)
+        try:
+            email = verify_reset_password_token(token)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired reset token"
+            )
         user = self.user_repo.get_user_by_email(email)
         if not user:
             raise HTTPException(
