@@ -1,6 +1,6 @@
-from core.security import hash_password
-from modules.auth.models.auth_models import AuthProvider
-from modules.user.models.user_model import User
+from app.core.security import hash_password
+from app.modules.auth.models.auth_models import AuthProvider
+from app.modules.user.models.user_model import User
 
 
 def create_test_user(db):

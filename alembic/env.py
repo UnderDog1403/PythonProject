@@ -1,20 +1,24 @@
 from logging.config import fileConfig
-from core.database import Base
+from app.core.database import Base
+from app.modules.product.models.combo_model import Combo
+from app.modules.product.models.combo_pizza_item_model import ComboPizzaItem
+from app.modules.product.models.combo_pizza_item_size_model import ComboPizzaItemSize
+from app.modules.product.models.combo_pizza_item_topping_model import ComboPizzaItemTopping
+from app.modules.product.models.category_model import Category
+from app.modules.product.models.pizza_model import Pizza
+from app.modules.product.models.pizza_size_model import PizzaSize
+from app.modules.product.models.pizza_topping_model import PizzaTopping
+from app.modules.product.models.pizza_size_mapping_model import PizzaSizeMapping
+from app.modules.product.models.pizza_topping_mapping_model import PizzaToppingMapping
+from app.modules.product.models.pizza_category_mapping_model import PizzaCategoryMapping
+from app.modules.auth.models.auth_models import AuthProvider
+from app.modules.auth.models.password_reset import PasswordReset
+from app.modules.auth.models.token_blacklist import TokenBlacklist
+from app.modules.user.models.user_model import User
+
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-from modules.user.models.user_model import User
-from modules.auth.models.auth_models import AuthProvider
-from modules.auth.models.password_reset import PasswordReset
-from modules.product.models.category_model import Category
-from modules.product.models.pizza_model import Pizza
-from modules.product.models.pizza_size_model import PizzaSize
-from modules.product.models.pizza_topping_model import PizzaTopping
-from modules.product.models.pizza_category_model import PizzaCategory
-from modules.product.models.combo_model import Combo
-from modules.product.models.combo_pizza_item_model import ComboPizzaItem
-from modules.product.models.combo_pizza_item_size_model import ComboPizzaItemSize
-from modules.product.models.combo_pizza_item_topping_model import ComboPizzaItemTopping
 from alembic import context
 
 # this is the Alembic Config object, which provides

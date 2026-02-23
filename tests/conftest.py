@@ -3,12 +3,12 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import pytest
-from core.database import Base
+from app.core.database import Base
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from core.dependencies import get_db
-from main import app
+from app.core.dependencies import get_db
+from app.main import app
 
 
 DATABASETEST_URL = "postgresql://ducanh:halucie2k3@localhost:5432/fastapitest"
