@@ -27,11 +27,11 @@ def send_forgot_password_email(user: User, background_tasks: BackgroundTasks,otp
         "name": user.name,
         'otp': otp
     }
-    send_email_async(
-        email_to =[user.email],
+    background_tasks.add_task(
+        send_email_async,
+        email_to=[user.email],
         subject=subject,
         body=body,
-        background_tasks=background_tasks,
         template_name="forgot_password.html"
     )
 

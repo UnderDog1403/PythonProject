@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.redis import redis_client
 from app.modules.product.models.category_model import Category
 from app.modules.product.repositories.category_repository import CategoryRepository
-from app.modules.product.schemas.category_schema import CategoryResponseSchema, CategoryListResponseSchema
+from app.modules.product.schemas.category_schema import CategoryResponseSchema
 
 
 class CategoryService:

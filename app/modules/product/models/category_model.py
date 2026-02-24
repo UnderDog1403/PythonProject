@@ -1,7 +1,7 @@
 
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, func
 from sqlalchemy.orm import relationship
-
+from app.modules.product.models.pizza_category_mapping_model import PizzaCategoryMapping
 # Replace this Base with your project's shared Base (e.g. from app.database import Base)
 from app.core.database import Base
 
