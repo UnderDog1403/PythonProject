@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from starlette.background import BackgroundTasks
 
 from app.core.security import (
@@ -86,21 +86,27 @@ class AuthService:
             raise HTTPException(status_code=400, detail="Passwords do not match")
 
         existing_user = await self.user_repo.get_user_by_email(email)
-
         if existing_user:
-            existing_auth = await self.auth_repo.get_local_auth_by_user_id(existing_user.id)
-            if existing_auth:
-                raise HTTPException(status_code=409, detail="Email already exists")
+            if existing_user.is_verified:
+                local_auth_provider = await self.auth_repo.get_local_auth_by_user_id(existing_user.id)
+                if local_auth_provider:
+                    raise HTTPException(status_code=400, detail="Email is already registered")
+                else:
+                    local_auth = AuthProvider(
+                        user_id=existing_user.id,
+                        provider="local",
+                        password_hash=hash_password(password),
+                    )
+                    self.db.add(local_auth)
+                    await self.db.commit()
+                    return {"message": "Password set successfully. You can now log in."}
+            else:
+                try:
+                    send_verification_email(existing_user, self.background_tasks)
+                except Exception as e:
+                    print("MAIL ERROR:", e)
 
-            self.db.add(
-                AuthProvider(
-                    user_id=existing_user.id,
-                    provider="local",
-                    password_hash=hash_password(password),
-                )
-            )
-            await self.db.commit()
-            return {"message": "Local authentication added to existing user"}
+                return {"message": "Registration successful. Please verify your email."}
 
         user_count = await self.user_repo.count_users()
         new_user = User(email=email, name=f"User{user_count + 1}")
@@ -129,7 +135,14 @@ class AuthService:
         user = await self.user_repo.get_user_by_email(email)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-
+        await self.db.execute(
+            update(PasswordReset)
+            .where(
+                PasswordReset.email == email,
+                PasswordReset.is_used == False
+            )
+            .values(is_used=True)
+        )
         otp = "".join(secrets.choice("0123456789") for _ in range(6))
 
         self.db.add(
@@ -154,8 +167,9 @@ class AuthService:
                 PasswordReset.is_used == False,
             )
             .order_by(PasswordReset.created_at.desc())
+            .limit(1)
         )
-        password_reset = result.scalar_one_or_none()
+        password_reset = result.scalar().first()
 
         if (
             not password_reset

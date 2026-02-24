@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Numeric, Boolean, DateTime, func
 from sqlalchemy.orm import relationship
-
+from app.modules.product.models.pizza_size_mapping_model import PizzaSizeMapping
 # Replace this Base with your project's shared Base (e.g. from app.database import Base)
 from app.core.database import Base
 
