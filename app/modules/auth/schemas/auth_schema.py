@@ -14,6 +14,7 @@ async def login_form(
     return LoginRequestSchema(email=email, password=password)
 class LoginResponseSchema(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
     user: UserResponseSchema
     class Config:

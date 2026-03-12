@@ -1,19 +1,31 @@
-# modules/product/repositories/category_repository.py
+
+
+# modules/product/repositories/product_repository.py
 
 from typing import List, Optional, Any, Dict, Tuple, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import asc, desc, select, func
-from app.modules.product.models.category_model import Category
+from sqlalchemy.orm import selectinload
 
-class CategoryRepository:
+from app.modules.product.models.attribute_value_model import AttributeValue
+from app.modules.product.models.product_model import Product
+from app.modules.product.models.product_variant_model import ProductVariant
+
+
+class ProductRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
-    async def get_all(self) -> Sequence[Category]:
-        stmt = select(Category).where(Category.is_active.is_(True))
+
+    async def get_all(self):
+        stmt = (
+            select(Product)
+            .options(selectinload(Product.variants))
+        )
+
         result = await self.db.execute(stmt)
         return result.scalars().all()
-    async def admin_get_all(self) -> Sequence[Category]:
-        stmt = select(Category)
+    async def admin_get_all(self) -> Sequence[Product]:
+        stmt = select(Product)
         result = await self.db.execute(stmt)
         return result.scalars().all()
     # async def get_categories_paginated(
@@ -22,19 +34,19 @@ class CategoryRepository:
     #     limit: int = 10,
     #     order_by: str = "id",
     #     descending: bool = False
-    # ) -> Tuple[List[Category], int, int]:
+    # ) -> Tuple[List[Product], int, int]:
     #
     #     offset_value = max(page - 1, 0) * limit
-    #     order_col = getattr(Category, order_by, Category.id)
+    #     order_col = getattr(Product, order_by, Product.id)
     #     order_fn = desc if descending else asc
     #
     #     # total count
-    #     total_stmt = select(func.count()).select_from(Category)
+    #     total_stmt = select(func.count()).select_from(Product)
     #     total = await self.db.scalar(total_stmt)
     #
     #     # items
     #     stmt = (
-    #         select(Category)
+    #         select(Product)
     #         .order_by(order_fn(order_col))
     #         .offset(offset_value)
     #         .limit(limit)
@@ -72,36 +84,44 @@ class CategoryRepository:
     #     total_pages = (total + limit - 1) // limit if limit > 0 else 0
     #
     #     return items, total, total_pages
-    async def get_by_id(self, category_id: int) -> Optional[Category]:
-        stmt = select(Category).where(Category.id == category_id)
+    async def get_by_id(self, product_id: int) -> Optional[Product]:
+        stmt = (
+            select(Product)
+            .where(Product.id == product_id)
+            .options(
+                selectinload(Product.variants)
+                .selectinload(ProductVariant.attribute_values)
+                .selectinload(AttributeValue.attribute)
+            )
+        )
         result = await self.db.execute(stmt)
         return result.scalars().one_or_none()
     async def create(self, data: dict):
-        category = Category(**data)
-        self.db.add(category)
+        product = Product(**data)
+        self.db.add(product)
         await self.db.commit()
-        await self.db.refresh(category)
-        return category
+        await self.db.refresh(product)
+        return product
     async def update(
         self,
-        category_id: int,
+        product_id: int,
         data: Dict[str, Any]
-    ) -> Optional[Category]:
+    ) -> Optional[Product]:
 
-        category = await self.get_by_id(category_id)
-        if not category:
+        product = await self.get_by_id(product_id)
+        if not product:
             return None
         for key, value in data.items():
-            setattr(category, key, value)
+            setattr(product, key, value)
         await self.db.commit()
-        await self.db.refresh(category)
-        return category
+        await self.db.refresh(product)
+        return product
 
-    async def delete(self, category_id: int) -> bool:
-        category = await self.get_by_id(category_id)
-        if not category:
+    async def delete(self, product_id: int) -> bool:
+        product = await self.get_by_id(product_id)
+        if not product:
             return False
 
-        await self.db.delete(category)
+        await self.db.delete(product)
         await self.db.commit()
         return True

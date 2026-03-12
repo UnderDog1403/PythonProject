@@ -169,7 +169,7 @@ class AuthService:
             .order_by(PasswordReset.created_at.desc())
             .limit(1)
         )
-        password_reset = result.scalar().first()
+        password_reset = result.scalars().one_or_none()
 
         if (
             not password_reset

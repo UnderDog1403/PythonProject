@@ -7,8 +7,7 @@ class CategoryResponseSchema(BaseModel):
     id: int
     name: str
     description: str | None = None
-    is_actived: bool
-
+    is_active: bool
     class Config:
         from_attributes = True
 class CategoryCreateSchema(BaseModel):
@@ -17,4 +16,4 @@ class CategoryCreateSchema(BaseModel):
 class CategoryUpdateSchema(BaseModel):
     name: str | None = None
     description: str | None = None
-    is_actived: bool | None = None
+    is_active: bool | None = None

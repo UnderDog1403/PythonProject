@@ -1,18 +1,21 @@
+from sqlalchemy import Integer, Column, String, Text, ForeignKey, Boolean, DateTime, func
+from sqlalchemy.orm import relationship
 
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, func
-# Replace this Base with your project's shared Base (e.g. from app.database import Base)
 from app.core.database import Base
 
-class Category(Base):
-    __tablename__ = "categories"
+class Attribute(Base):
+    __tablename__ = "attributes"
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, unique=True)
     name = Column(String(255), nullable=False, unique=True)
-    description = Column(Text, nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now()
+    )
+    values = relationship(
+        "AttributeValue",
+        back_populates="attribute"
     )

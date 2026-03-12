@@ -40,9 +40,8 @@ async def create_category(
 ):
     category_service = CategoryService(db)
 
-    return await category_service.create_category(
-        name=payload.name,
-        description=getattr(payload, "description", None)
+    return await category_service.create(
+        payload.model_dump(exclude_unset=True)
     )
 
 
@@ -59,7 +58,7 @@ async def update_category(
 ):
     service = CategoryService(db)
     update_data = payload.model_dump(exclude_unset=True)
-    return await service.update_category(
+    return await service.update(
         category_id=category_id,
         data=update_data
     )
@@ -73,4 +72,4 @@ async def delete_category(
     # current_user=Depends(require_roles(["admin"]))
 ):
     service = CategoryService(db)
-    await service.delete_category(category_id)
+    await service.delete(category_id)

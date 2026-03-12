@@ -65,78 +65,36 @@ class CategoryService:
     #             detail="Internal server error while retrieving categories"
     #         )
 
-    async def create_category(
-        self,
-        name: str,
-        description: Optional[str] = None
-    ) -> Category:
-
-        if not name or not isinstance(name, str) or not name.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="`name` is required and must be a non-empty string"
-            )
-
+    async def create(self, data: dict):
         try:
-            category = await self.repository.create_category(
-                name=name.strip(),
-                description=description
-            )
+            category =await self.repository.create(data)
             await redis_client.delete("items:categories:all")
             return category
-        except Exception:
+        except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail="Internal server error while creating category"
+                detail=f"Internal server error while creating pizza: {str(e)}"
             )
-
-    async def update_category(
-        self,
-        category_id: int,
-        data: Dict[str, Any]
-    ) -> Category:
-
-        if not isinstance(category_id, int) or category_id < 1:
-            raise HTTPException(
-                status_code=400,
-                detail="`category_id` must be a positive integer"
-            )
-
-        if not isinstance(data, dict) or not data:
-            raise HTTPException(
-                status_code=400,
-                detail="`data` must be a non-empty object with fields to update"
-            )
-
-        # prevent updating id
-        data = {k: v for k, v in data.items() if k != "id"}
-
+    async def update(self, category_id: int, data: dict):
         try:
-            updated = await self.repository.update_category(category_id, data)
-            if not updated:
+            category = await self.repository.update(category_id, data)
+            if not category:
                 raise HTTPException(
                     status_code=404,
-                    detail="Category not found"
+                    detail=f"Category not found"
                 )
             await redis_client.delete("items:categories:all")
-            return updated
+            return category
         except HTTPException:
             raise
-        except Exception:
+        except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail="Internal server error while updating category"
+                detail=f"Internal server error while updating pizza: {str(e)}"
             )
-    async def delete_category(self, category_id: int) -> bool:
-
-        if not isinstance(category_id, int) or category_id < 1:
-            raise HTTPException(
-                status_code=400,
-                detail="`category_id` must be a positive integer"
-            )
-
+    async def delete(self, category_id: int) -> bool:
         try:
-            deleted = await self.repository.delete_category(category_id)
+            deleted = await self.repository.delete(category_id)
             if not deleted:
                 raise HTTPException(
                     status_code=404,

@@ -1,14 +1,17 @@
-
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, func
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, func, ForeignKey, UniqueConstraint
 # Replace this Base with your project's shared Base (e.g. from app.database import Base)
 from app.core.database import Base
 
-class Category(Base):
-    __tablename__ = "categories"
 
+class OptionValue(Base):
+    __tablename__ = "option_values"
+    __table_args__ = (
+        UniqueConstraint("option_id", "value", name="uq_option_value"),
+    )
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, unique=True)
-    name = Column(String(255), nullable=False, unique=True)
-    description = Column(Text, nullable=True)
+    option_id = Column(Integer, ForeignKey("options.id"), nullable=False)
+    value = Column(String(255), nullable=False)
+    extra_price = Column(Integer, nullable=False, default=0)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
@@ -16,3 +19,5 @@ class Category(Base):
         server_default=func.now(),
         onupdate=func.now()
     )
+
+

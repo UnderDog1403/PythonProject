@@ -1,19 +1,21 @@
-# modules/product/repositories/category_repository.py
+
+
+# modules/option/repositories/option_repository.py
 
 from typing import List, Optional, Any, Dict, Tuple, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import asc, desc, select, func
-from app.modules.product.models.category_model import Category
+from app.modules.product.models.option_model import Option
 
-class CategoryRepository:
+class OptionRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
-    async def get_all(self) -> Sequence[Category]:
-        stmt = select(Category).where(Category.is_active.is_(True))
+    async def get_all(self) -> Sequence[Option]:
+        stmt = select(Option).where(Option.is_active.is_(True))
         result = await self.db.execute(stmt)
         return result.scalars().all()
-    async def admin_get_all(self) -> Sequence[Category]:
-        stmt = select(Category)
+    async def admin_get_all(self) -> Sequence[Option]:
+        stmt = select(Option)
         result = await self.db.execute(stmt)
         return result.scalars().all()
     # async def get_categories_paginated(
@@ -22,19 +24,19 @@ class CategoryRepository:
     #     limit: int = 10,
     #     order_by: str = "id",
     #     descending: bool = False
-    # ) -> Tuple[List[Category], int, int]:
+    # ) -> Tuple[List[Option], int, int]:
     #
     #     offset_value = max(page - 1, 0) * limit
-    #     order_col = getattr(Category, order_by, Category.id)
+    #     order_col = getattr(Option, order_by, Option.id)
     #     order_fn = desc if descending else asc
     #
     #     # total count
-    #     total_stmt = select(func.count()).select_from(Category)
+    #     total_stmt = select(func.count()).select_from(Option)
     #     total = await self.db.scalar(total_stmt)
     #
     #     # items
     #     stmt = (
-    #         select(Category)
+    #         select(Option)
     #         .order_by(order_fn(order_col))
     #         .offset(offset_value)
     #         .limit(limit)
@@ -72,36 +74,36 @@ class CategoryRepository:
     #     total_pages = (total + limit - 1) // limit if limit > 0 else 0
     #
     #     return items, total, total_pages
-    async def get_by_id(self, category_id: int) -> Optional[Category]:
-        stmt = select(Category).where(Category.id == category_id)
+    async def get_by_id(self, option_id: int) -> Optional[Option]:
+        stmt = select(Option).where(Option.id == option_id)
         result = await self.db.execute(stmt)
         return result.scalars().one_or_none()
     async def create(self, data: dict):
-        category = Category(**data)
-        self.db.add(category)
+        option = Option(**data)
+        self.db.add(option)
         await self.db.commit()
-        await self.db.refresh(category)
-        return category
+        await self.db.refresh(option)
+        return option
     async def update(
         self,
-        category_id: int,
+        option_id: int,
         data: Dict[str, Any]
-    ) -> Optional[Category]:
+    ) -> Optional[Option]:
 
-        category = await self.get_by_id(category_id)
-        if not category:
+        option = await self.get_by_id(option_id)
+        if not option:
             return None
         for key, value in data.items():
-            setattr(category, key, value)
+            setattr(option, key, value)
         await self.db.commit()
-        await self.db.refresh(category)
-        return category
+        await self.db.refresh(option)
+        return option
 
-    async def delete(self, category_id: int) -> bool:
-        category = await self.get_by_id(category_id)
-        if not category:
+    async def delete(self, option_id: int) -> bool:
+        option = await self.get_by_id(option_id)
+        if not option:
             return False
 
-        await self.db.delete(category)
+        await self.db.delete(option)
         await self.db.commit()
         return True
