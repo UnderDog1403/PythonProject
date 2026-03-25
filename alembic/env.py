@@ -13,6 +13,10 @@ from app.modules.product.models.variant_attribute_value_model import VariantAttr
 from app.modules.product.models.option_model import Option
 from app.modules.product.models.option_value_model import OptionValue
 from app.modules.product.models.product_option_model import ProductOption
+from app.modules.promotion.models.voucher_model import Voucher
+from app.modules.order.models.order_model import Order
+from app.modules.order.models.order_item_model import OrderItem
+from app.modules.order.models.order_item_option_model import OrderItemOption
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool

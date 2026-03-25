@@ -1,4 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, func, ForeignKey, UniqueConstraint
+from sqlalchemy.orm import relationship
+
 # Replace this Base with your project's shared Base (e.g. from app.database import Base)
 from app.core.database import Base
 
@@ -19,5 +21,7 @@ class OptionValue(Base):
         server_default=func.now(),
         onupdate=func.now()
     )
+
+    option = relationship("Option",lazy="selectin", back_populates="values")
 
 

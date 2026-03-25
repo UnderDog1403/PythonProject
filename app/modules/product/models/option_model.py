@@ -1,4 +1,5 @@
 from sqlalchemy import Integer, Column, String, Text, ForeignKey, Boolean, DateTime, func
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 class Option(Base):
@@ -14,4 +15,9 @@ class Option(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now()
+    )
+
+    values = relationship(
+        "OptionValue",
+        back_populates="option"
     )

@@ -42,3 +42,13 @@ class VoucherRepository:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_by_code_for_update(self, code: str) -> Voucher | None:
+
+        query = (
+            select(Voucher)
+            .where(Voucher.code == code)
+            .with_for_update()  # <--- Cực kỳ quan trọng để chống Race Condition
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+

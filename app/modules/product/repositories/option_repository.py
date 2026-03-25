@@ -2,7 +2,7 @@
 
 # modules/option/repositories/option_repository.py
 
-from typing import List, Optional, Any, Dict, Tuple, Sequence
+from typing import List, Optional, Any, Dict, Tuple, Sequence, Coroutine
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import asc, desc, select, func
 from app.modules.product.models.option_model import Option
@@ -78,6 +78,10 @@ class OptionRepository:
         stmt = select(Option).where(Option.id == option_id)
         result = await self.db.execute(stmt)
         return result.scalars().one_or_none()
+    async def get_by_ids(self, option_ids: List[int]) -> Sequence[Option]:
+        stmt = select(Option).where(Option.id.in_(option_ids))
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
     async def create(self, data: dict):
         option = Option(**data)
         self.db.add(option)

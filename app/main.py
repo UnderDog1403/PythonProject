@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from app.modules.auth.routers.auth_router import AuthRouter
 from app.modules.cart.routers.cart_router import CartRouter
+from app.modules.order.routers.order_router import OrderRouter
 from app.modules.product.routers.attribute_router import AttributeRouter
 from app.modules.product.routers.attribute_value_router import AttributeValueRouter
 
@@ -12,6 +13,7 @@ from app.modules.product.routers.product_option_router import ProductOptionRoute
 from app.modules.product.routers.product_router import ProductRouter
 from app.modules.product.routers.product_variant_router import ProductVariantRouter
 from app.modules.product.routers.variant_attribute_value_router import VariantAttributeValueRouter
+from app.modules.promotion.routers.voucher_router import VoucherRouter
 from app.modules.user.routers.user_router import UserRouter
 
 app = FastAPI()
@@ -27,6 +29,8 @@ app.include_router(OptionRouter)
 app.include_router(OptionValueRouter)
 app.include_router(ProductOptionRouter)
 app.include_router(CartRouter)
+app.include_router(VoucherRouter)
+app.include_router(OrderRouter)
 
 @app.get("/")
 def root():

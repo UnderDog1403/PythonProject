@@ -5,6 +5,8 @@
 from typing import List, Optional, Any, Dict, Tuple, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import asc, desc, select, func
+from sqlalchemy.orm import selectinload
+
 from app.modules.product.models.option_value_model import OptionValue
 
 class OptionValueRepository:
@@ -75,9 +77,15 @@ class OptionValueRepository:
     #
     #     return items, total, total_pages
     async def get_by_id(self, option_value_id: int) -> Optional[OptionValue]:
-        stmt = select(OptionValue).where(OptionValue.id == option_value_id)
+        stmt = (select(OptionValue)
+                .options(selectinload(OptionValue.option))
+                .where(OptionValue.id == option_value_id))
         result = await self.db.execute(stmt)
         return result.scalars().one_or_none()
+    async def get_by_ids(self, option_value_ids: List[int]) -> Sequence[OptionValue]:
+        stmt = select(OptionValue).where(OptionValue.id.in_(option_value_ids))
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
     async def create(self, data: dict):
         option_value = OptionValue(**data)
         self.db.add(option_value)

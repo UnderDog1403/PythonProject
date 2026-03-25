@@ -1,4 +1,5 @@
 from sqlalchemy import Column, BigInteger, String, Numeric, Integer, Boolean, DateTime, Enum
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.schema import Identity
 from app.core.database import Base
@@ -39,3 +40,5 @@ class Voucher(Base):
         server_default=func.now(),
         onupdate=func.now()
     )
+
+    orders = relationship("Order", back_populates="voucher")

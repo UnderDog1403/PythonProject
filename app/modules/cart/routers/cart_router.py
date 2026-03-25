@@ -3,7 +3,8 @@ from starlette import status
 
 from app.core.dependencies import db_dependency
 from app.core.security import get_current_user
-from app.modules.cart.schemas.cart_schema import CalculateCartSchema, CartItemCreateSchema
+from app.modules.cart.schemas.cart_schema import CalculateCartSchema, CartItemCreateSchema, RemoveCartItemSchema, \
+    CartItemUpdateSchema, CartResponse, CalculateResponse
 from app.modules.cart.services.cart_service import CartService
 
 CartRouter = APIRouter(
@@ -14,10 +15,11 @@ CartRouter = APIRouter(
 @CartRouter.get(
     "/",
     status_code=status.HTTP_200_OK,
+    response_model=CartResponse
 )
 async def get_cart(
     db : db_dependency,
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_user),
 ):
     cart_service = CartService(db)
     user_id = current_user["id"]
@@ -33,19 +35,19 @@ async def add_to_cart(
 ):
     cart_service = CartService(db)
     user_id = current_user["id"]
-    return await cart_service.add_to_cart(user_id, payload.product_variant_id, payload.quantity)
+    return await cart_service.add_to_cart(user_id, payload.product_variant_id, payload.quantity,payload.option_value_ids)
 @CartRouter.delete(
     "/remove/{variant_id}",
     status_code=status.HTTP_200_OK,
 )
 async def remove_item(
-    variant_id: int,
+    payload: RemoveCartItemSchema,
     db : db_dependency,
     current_user = Depends(get_current_user)
 ):
     cart_service = CartService(db)
     user_id = current_user["user_id"]
-    return await cart_service.remove_item(user_id, variant_id)
+    return await cart_service.remove_item(user_id, payload.item_key)
 @CartRouter.delete(
     "/clear",
     status_code=status.HTTP_200_OK,
@@ -62,23 +64,20 @@ async def clear_cart(
     status_code=status.HTTP_200_OK,
 )
 async def update_cart(
-    product_variant_id: int,
-    quantity: int,
+    payload: CartItemUpdateSchema,
     db : db_dependency,
     current_user = Depends(get_current_user)
 ):
     cart_service = CartService(db)
     user_id = current_user["id"]
-    return await cart_service.update_cart_item(user_id, product_variant_id, quantity)
-@CartRouter.post("/calculate")
+    return await cart_service.update_cart_item(user_id, payload.item_key,payload.quantity)
+@CartRouter.post("/calculate", status_code=status.HTTP_200_OK, response_model=CalculateResponse)
 async def calculate_selected_items(
-    data: CalculateCartSchema,
+    payload: CalculateCartSchema,
     db : db_dependency,
     current_user=Depends(get_current_user)
 ):
     user_id = current_user["id"]
     cart_service = CartService(db)
-    return await cart_service.calculate_selected_items(
-        user_id=user_id,
-        variant_ids=data.variant_ids
-    )
+    return await cart_service.calculate_selected_items(user_id, payload.item_keys)
+

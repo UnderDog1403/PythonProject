@@ -32,7 +32,6 @@ async def get_all_by_product_id(
 @ProductVariantRouter.post(
     "/",
     status_code=status.HTTP_201_CREATED,
-    response_model=ProductVariantResponseSchema
 )
 async def create_product_variant(
     payload: ProductVariantCreateSchema,
