@@ -11,7 +11,8 @@ class ProductVariantResponseSchema(BaseModel):
         from_attributes = True
 class ProductVariantCreateSchema(BaseModel):
     price: int
-    product_id: int
+    is_active: bool
+    attribute_value_ids: list[int]
 class ProductVariantUpdateSchema(BaseModel):
     price: int | None = None
     product_id: int | None = None

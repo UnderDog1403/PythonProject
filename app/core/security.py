@@ -7,6 +7,9 @@ from jose import jwt, JWTError
 
 from fastapi.security import HTTPBearer
 
+from app.core.redis import redis_client
+MAX_ATTEMPTS = 5
+WINDOW_SECONDS = 60
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 ALGORITHM='HS256'
 SECRET_KEY='T6d3gXj8Fq9zU1L0hK2aVwR7bM5eYp4XjAq1H8sV0cI'
@@ -111,3 +114,16 @@ def require_roles(roles: list[str]):
             )
         return user
     return checker
+async def check_email_rate_limit(email: str):
+
+    key = f"login_attempt:{email}"
+
+    attempts = await redis_client.incr(key)
+    if attempts == 1:
+        await redis_client.expire(key, WINDOW_SECONDS)
+    if attempts > MAX_ATTEMPTS:
+        ttl = await redis_client.ttl(key)
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many login attempts. Try again in {ttl}s"
+        )

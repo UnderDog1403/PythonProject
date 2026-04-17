@@ -24,12 +24,3 @@ class VariantAttributeValue(Base):
         server_default=func.now(),
         nullable=False
     )
-    variant = relationship(
-        "ProductVariant",
-        back_populates="variant_attributes"
-    )
-
-    attribute_value = relationship(
-        "AttributeValue",
-        back_populates="variant_links"
-    )

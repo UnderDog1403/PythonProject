@@ -28,6 +28,9 @@ async def get_all(
 
     options = await option_service.get_all()
     return options
+
+
+
 @OptionRouter.post(
     "/",
     status_code=status.HTTP_201_CREATED,
@@ -40,10 +43,9 @@ async def create_option(
 ):
     option_service = OptionService(db)
 
-    return await option_service.create(
+    return await option_service.create_option_with_values(
         payload.model_dump(exclude_unset=True)
     )
-
 
 @OptionRouter.put(
     "/{option_id}",

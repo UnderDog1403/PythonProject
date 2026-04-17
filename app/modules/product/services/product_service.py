@@ -6,13 +6,23 @@ from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.redis import redis_client
 from app.modules.product.models.product_model import Product
+from app.modules.product.models.product_variant_model import ProductVariant
+from app.modules.product.repositories.attribute_value_repository import AttributeValueRepository
+from app.modules.product.repositories.option_repository import OptionRepository
+from app.modules.product.repositories.product_option_repository import ProductOptionRepository
 from app.modules.product.repositories.product_repostiory import ProductRepository
+from app.modules.product.repositories.product_variant_repository import ProductVariantRepository
 from app.modules.product.schemas.product_schema import ProductResponseSchema, ProductDetailResponseSchema
 
 
 class ProductService:
     def __init__(self, db: AsyncSession):
         self.repository = ProductRepository(db)
+        self.db = db
+        self.product_options_repo = ProductOptionRepository(db)
+        self.option_repo = OptionRepository(db)
+        self.variant_repo = ProductVariantRepository(db)
+        self.attribute_value_repo = AttributeValueRepository(db)
     async def get_all(self)-> list[ProductResponseSchema]:
         cached_item = await redis_client.get(f"items:products:all")
         if cached_item:
@@ -142,13 +152,57 @@ class ProductService:
 
     async def create(self, data: dict):
         try:
-            product =await self.repository.create(data)
+            # 1. Khởi tạo đối tượng Product trên RAM
+            product_dict = {
+                "name": data.get("name"),
+                "description": data.get("description"),
+                "category_id": data.get("category_id"),
+                "image_url": data.get("image_url")
+            }
+            product = Product(**product_dict)
+
+            # 2. Trích xuất và gắn danh sách Options
+            option_ids = data.get("options")
+            if option_ids:
+                options = await self.option_repo.get_by_ids(option_ids)
+                product.options = options
+
+            # 3. Trích xuất và gắn danh sách Variants
+            variants = data.get("variants", [])
+            for variant_data in variants:
+                # TẠO TRÊN RAM, KHÔNG GỌI REPO CREATE
+                # Không cần truyền product_id, SQLAlchemy sẽ tự map qua relationship!
+                variant = ProductVariant(
+                    price=variant_data.get("price"),
+                    is_active=variant_data.get("is_active")
+                )
+
+                # Gắn Attributes vào Variant
+                attribute_value_ids = variant_data.get("attribute_value_ids")
+                if attribute_value_ids:
+                    attribute_values = await self.attribute_value_repo.get_by_ids(attribute_value_ids)
+                    variant.attribute_values = attribute_values
+
+                # DÙNG APPEND ĐỂ THÊM VÀO DANH SÁCH VARIANTS CỦA PRODUCT
+                product.variants.append(variant)
+
+            # 4. LƯU TOÀN BỘ XUỐNG DB 1 LẦN DUY NHẤT
+            # Tùy thuộc cấu trúc code của bạn, dùng thẳng db session cho an toàn:
+            self.repository.db.add(product)
+            await self.repository.db.commit()
+            await self.repository.db.refresh(product)
+
+            # Xóa cache Redis
             await redis_client.delete("items:products:all")
+
             return product
+
         except Exception as e:
+            await self.repository.db.rollback()
+            print(f"Error creating product: {e}")
             raise HTTPException(
                 status_code=500,
-                detail=f"Internal server error while creating pizza: {str(e)}"
+                detail=f"Internal server error while creating product: {str(e)}"
             )
     async def update(self, product_id: int, data: dict):
         try:

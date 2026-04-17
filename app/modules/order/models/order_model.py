@@ -5,11 +5,10 @@ from sqlalchemy.orm import declarative_base, relationship
 
 from app.core.database import Base
 
-
-class DeliveryType(str, enum.Enum):
+class OrderType(str, enum.Enum):
     PICKUP = "PICKUP"
     DELIVERY = "DELIVERY"
-
+    DINE_IN = "DINE_IN"
 
 class PaymentMethod(str, enum.Enum):
     ONLINE = "ONLINE"
@@ -39,7 +38,7 @@ class Order(Base):
     user_id = Column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="RESTRICT"),
-        nullable=False
+        nullable=True
     )
     voucher_id = Column(BigInteger, ForeignKey("vouchers.id", ondelete="SET NULL"), nullable=True)
 
@@ -48,12 +47,13 @@ class Order(Base):
     shipping_fee = Column(Numeric(12, 2), default=0)  # Phí ship
     total_amount = Column(Numeric(12, 2), nullable=False)  # Tiền thanh toán cuối cùng
 
+
     customer_name = Column(String(255), nullable=False)
     customer_phone = Column(String(20), nullable=False)
     voucher_code = Column(String(50), nullable=True)
 
-    delivery_type = Column(SQLEnum(DeliveryType, native_enum=False, length=20), nullable=False)
-    pickup_time = Column(DateTime(timezone=True), nullable=True)
+    order_type = Column(SQLEnum(OrderType, native_enum=False, length=20), nullable=True)
+    scheduled_time = Column(DateTime(timezone=True), nullable=True)
     delivery_address = Column(Text, nullable=True)
 
 

@@ -3,9 +3,11 @@ import json
 from typing import Tuple, List, Dict, Any, Optional
 from fastapi import HTTPException
 from pydantic import TypeAdapter
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.redis import redis_client
 from app.modules.product.models.option_model import Option
+from app.modules.product.models.option_value_model import OptionValue
 from app.modules.product.repositories.option_repository import OptionRepository
 from app.modules.product.schemas.option_schema import OptionResponseSchema
 
@@ -13,16 +15,10 @@ from app.modules.product.schemas.option_schema import OptionResponseSchema
 class OptionService:
     def __init__(self, db: AsyncSession):
         self.repository = OptionRepository(db)
+        self.db = db
     async def get_all(self)-> list[OptionResponseSchema]:
-
-        # try:
         options = await self.repository.get_all()
         return options
-        # except Exception:
-        #     raise HTTPException(
-        #         status_code=500,
-        #         detail="Internal server error while retrieving options"
-        #     )
     # async def get_options_paginated(
     #     self,
     #     page: int = 1,
@@ -53,16 +49,35 @@ class OptionService:
     #             status_code=500,
     #             detail="Internal server error while retrieving options"
     #         )
-
-    async def create(self, data: dict):
+    async def create_option_with_values(self, data: dict):
+        values_data = data.pop("values", [])
+        db_option_values = [
+            OptionValue(**val_data)
+            for val_data in values_data
+        ]
+        db_option = Option(**data, values=db_option_values)
         try:
-            option =await self.repository.create(data)
-            return option
+            # 4. GỌI REPOSITORY (Repo của bạn đã có sẵn self.db.add và flush)
+            created_option = await self.repository.create(db_option)
+
+            # 5. CHỐT GIAO DỊCH
+            await self.db.commit()
+            await self.db.refresh(created_option, ["values"])
+            return created_option
+
+        except IntegrityError:
+            await self.db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail="Tên Option hoặc giá trị OptionValue đã tồn tại."
+            )
         except Exception as e:
+            await self.db.rollback()
             raise HTTPException(
                 status_code=500,
-                detail=f"Internal server error while creating pizza: {str(e)}"
+                detail=f"Lỗi hệ thống không xác định: {str(e)}"
             )
+
     async def update(self, option_id: int, data: dict):
         try:
             option = await self.repository.update(option_id, data)

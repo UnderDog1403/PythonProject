@@ -78,6 +78,10 @@ class AttributeValueRepository:
         stmt = select(AttributeValue).where(AttributeValue.id == attribute_value_id)
         result = await self.db.execute(stmt)
         return result.scalars().one_or_none()
+    async def get_by_ids(self, attribute_value_ids: List[int]) -> Sequence[AttributeValue]:
+        stmt = select(AttributeValue).where(AttributeValue.id.in_(attribute_value_ids))
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
     async def create(self, data: dict):
         attribute_value = AttributeValue(**data)
         self.db.add(attribute_value)

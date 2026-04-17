@@ -89,12 +89,11 @@ class ProductVariantRepository:
             )
         result = await self.db.execute(stmt)
         return result.scalars().all()
-    async def create(self, data: dict):
-        product_variant = ProductVariant(**data)
-        self.db.add(product_variant)
-        await self.db.commit()
-        await self.db.refresh(product_variant)
-        return product_variant
+
+    async def create(self, obj: ProductVariant) -> ProductVariant:
+        self.db.add(obj)
+        await self.db.flush()
+        return obj
     async def update(
         self,
         product_variant_id: int,

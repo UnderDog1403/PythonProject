@@ -31,6 +31,7 @@ async def get_all(
 @AttributeRouter.post(
     "/",
     status_code=status.HTTP_201_CREATED,
+    response_model=AttributeResponseSchema
 )
 async def create_attribute(
     payload: AttributeCreateSchema,

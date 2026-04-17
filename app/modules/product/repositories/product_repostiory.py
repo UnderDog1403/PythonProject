@@ -96,12 +96,10 @@ class ProductRepository:
         )
         result = await self.db.execute(stmt)
         return result.scalars().one_or_none()
-    async def create(self, data: dict):
-        product = Product(**data)
-        self.db.add(product)
-        await self.db.commit()
-        await self.db.refresh(product)
-        return product
+    async def create(self, obj: Product) -> Product:
+        self.db.add(obj)
+        await self.db.flush()
+        return obj
     async def update(
         self,
         product_id: int,

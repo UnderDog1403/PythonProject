@@ -23,10 +23,6 @@ class AttributeValue(Base):
         "Attribute",
         back_populates="values"
     )
-    variant_links = relationship(
-        "VariantAttributeValue",
-        back_populates="attribute_value"
-    )
     variants = relationship(
         "ProductVariant",
         secondary="variant_attribute_values",

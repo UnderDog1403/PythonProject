@@ -17,7 +17,9 @@ from app.modules.promotion.models.voucher_model import Voucher
 from app.modules.order.models.order_model import Order
 from app.modules.order.models.order_item_model import OrderItem
 from app.modules.order.models.order_item_option_model import OrderItemOption
-
+from app.modules.reservation.models.dining_table_model import DiningTable
+from app.modules.reservation.models.reservation_model import Reservation
+from app.modules.reservation.models.reservation_table_model import ReservationTable
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context

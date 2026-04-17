@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.redis import redis_client
 from app.modules.order.models.order_item_model import OrderItem
 from app.modules.order.models.order_item_option_model import OrderItemOption
-from app.modules.order.models.order_model import Order, DeliveryType
+from app.modules.order.models.order_model import Order, OrderType, OrderStatus
 from app.modules.order.repositories.order_repository import OrderRepository
 from app.modules.product.repositories.option_value_repository import OptionValueRepository
 from app.modules.product.repositories.product_variant_repository import ProductVariantRepository
@@ -23,9 +23,6 @@ class OrderService:
         self.option_value_repo = OptionValueRepository(db)
         self.voucher_repo = VoucherRepository(db)
 
-    async def get_by_id(self, order_id: int):
-        order = await self.order_repo.get_by_id(order_id)
-        return order
     async def update_status(self,order_id: int,data: dict):
         updated_order = await self.order_repo.update(order_id,data)
         return updated_order
@@ -143,11 +140,11 @@ class OrderService:
             # 4. LOGIC PHÍ SHIP
             calculated_shipping_fee = Decimal("0.0")
             # Tùy theo cách truyền enum, phải check kỹ
-            if delivery_type_val == DeliveryType.DELIVERY or delivery_type_val == "DELIVERY":
+            if delivery_type_val == OrderType.DELIVERY or delivery_type_val == "DELIVERY":
                 calculated_shipping_fee = Decimal("10000.0")
                 if not checkout_info.get("delivery_address"):
                     raise HTTPException(400, "Vui lòng nhập địa chỉ giao hàng tận nơi.")
-            elif delivery_type_val == DeliveryType.PICKUP or delivery_type_val == "PICKUP":
+            elif delivery_type_val == OrderType.PICKUP or delivery_type_val == "PICKUP":
                 calculated_shipping_fee = Decimal("0.0")
 
             # 5. CHỐT ĐƠN VÀ LƯU DATABASE
@@ -162,4 +159,29 @@ class OrderService:
         # 6. DỌN DẸP REDIS (Sau khi DB Transaction đã hoàn tất an toàn)
         await redis_client.hdel(f"cart:{user_id}", *selected_item_keys)
 
+        return new_order
+    async def get_all_by_user_id(self, user_id: str):
+        orders = await self.order_repo.get_all_by_user_id(user_id)
+        return orders
+    async def get_by_id_and_user(self, order_id: int, user_id: str):
+        order = await self.order_repo.get_by_id_and_user_id(order_id, user_id)
+        return order
+    async def cancel_order(self, order_id: int, user_id: str):
+        order = await self.order_repo.get_by_id_and_user_id(order_id, user_id)
+        if not order:
+            raise HTTPException(404, "Đơn hàng không tồn tại.")
+        if order.status != OrderStatus.PENDING:
+            raise HTTPException(400, "Đơn hàng đang được chuẩn bị, không được hủy.")
+        await self.order_repo.update(order_id, {"status": "CANCELLED"})
+        return {"message": "Đơn hàng đã được hủy."}
+
+    async def admin_get_all(self):
+        orders = await self.order_repo.get_all()
+        return orders
+    async def admin_get_by_id(self, order_id: int):
+        order = await self.order_repo.get_by_id(order_id)
+        return order
+    async def admin_create(self, order_data: dict):
+        new_order = Order(**order_data)
+        await self.order_repo.create(new_order)
         return new_order

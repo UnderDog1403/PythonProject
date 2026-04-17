@@ -5,13 +5,17 @@
 from typing import List, Optional, Any, Dict, Tuple, Sequence, Coroutine
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import asc, desc, select, func
+from sqlalchemy.orm import selectinload
+
 from app.modules.product.models.option_model import Option
 
 class OptionRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
     async def get_all(self) -> Sequence[Option]:
-        stmt = select(Option).where(Option.is_active.is_(True))
+        stmt = (select(Option)
+                .options(selectinload(Option.values))
+                .where(Option.is_active.is_(True)))
         result = await self.db.execute(stmt)
         return result.scalars().all()
     async def admin_get_all(self) -> Sequence[Option]:
@@ -82,12 +86,10 @@ class OptionRepository:
         stmt = select(Option).where(Option.id.in_(option_ids))
         result = await self.db.execute(stmt)
         return result.scalars().all()
-    async def create(self, data: dict):
-        option = Option(**data)
-        self.db.add(option)
-        await self.db.commit()
-        await self.db.refresh(option)
-        return option
+    async def create(self, obj: Option) -> Option:
+        self.db.add(obj)
+        await self.db.flush()
+        return obj
     async def update(
         self,
         option_id: int,

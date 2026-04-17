@@ -82,12 +82,10 @@ class AttributeRepository:
         stmt = select(Attribute).where(Attribute.id == attribute_id)
         result = await self.db.execute(stmt)
         return result.scalars().one_or_none()
-    async def create(self, data: dict):
-        attribute = Attribute(**data)
-        self.db.add(attribute)
-        await self.db.commit()
-        await self.db.refresh(attribute)
-        return attribute
+    async def create(self, obj: Attribute) -> Attribute:
+        self.db.add(obj)
+        await self.db.flush()
+        return obj
     async def update(
         self,
         attribute_id: int,

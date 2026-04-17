@@ -37,7 +37,7 @@ async def add_to_cart(
     user_id = current_user["id"]
     return await cart_service.add_to_cart(user_id, payload.product_variant_id, payload.quantity,payload.option_value_ids)
 @CartRouter.delete(
-    "/remove/{variant_id}",
+    "/remove",
     status_code=status.HTTP_200_OK,
 )
 async def remove_item(
@@ -46,10 +46,10 @@ async def remove_item(
     current_user = Depends(get_current_user)
 ):
     cart_service = CartService(db)
-    user_id = current_user["user_id"]
+    user_id = current_user["id"]
     return await cart_service.remove_item(user_id, payload.item_key)
 @CartRouter.delete(
-    "/clear",
+    "/",
     status_code=status.HTTP_200_OK,
 )
 async def clear_cart(
@@ -57,10 +57,10 @@ async def clear_cart(
     current_user = Depends(get_current_user)
 ):
     cart_service = CartService(db)
-    user_id = current_user["user_id"]
+    user_id = current_user["id"]
     return await cart_service.clear_cart(user_id)
-@CartRouter.post(
-    "/update",
+@CartRouter.patch(
+    "/",
     status_code=status.HTTP_200_OK,
 )
 async def update_cart(
@@ -71,13 +71,3 @@ async def update_cart(
     cart_service = CartService(db)
     user_id = current_user["id"]
     return await cart_service.update_cart_item(user_id, payload.item_key,payload.quantity)
-@CartRouter.post("/calculate", status_code=status.HTTP_200_OK, response_model=CalculateResponse)
-async def calculate_selected_items(
-    payload: CalculateCartSchema,
-    db : db_dependency,
-    current_user=Depends(get_current_user)
-):
-    user_id = current_user["id"]
-    cart_service = CartService(db)
-    return await cart_service.calculate_selected_items(user_id, payload.item_keys)
-

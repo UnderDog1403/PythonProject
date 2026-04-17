@@ -17,14 +17,10 @@ class ProductVariant(Base):
         onupdate=func.now()
     )
     product = relationship("Product", back_populates="variants")
-    variant_attributes = relationship(
-        "VariantAttributeValue",
-        back_populates="variant",
-        cascade="all, delete-orphan"
-    )
 
     attribute_values = relationship(
         "AttributeValue",
         secondary="variant_attribute_values",
-        back_populates="variants"
+        back_populates="variants",
+        lazy="selectin"
     )

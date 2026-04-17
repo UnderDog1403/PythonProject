@@ -21,3 +21,8 @@ class Option(Base):
         "OptionValue",
         back_populates="option"
     )
+    products = relationship(
+        "Product",
+        secondary="product_options",
+        back_populates="options"
+    )

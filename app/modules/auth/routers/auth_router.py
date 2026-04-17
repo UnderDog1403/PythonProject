@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status, BackgroundTasks, Header
 
-from app.core.security import require_roles
+from app.core.security import require_roles, check_email_rate_limit
 from ..schemas.auth_schema import (
     LoginResponseSchema,
     LoginRequestSchema,
@@ -29,6 +29,7 @@ async def login(
     db: db_dependency,
     background_tasks: BackgroundTasks
 ):
+    await check_email_rate_limit(payload.email)
     auth_service = AuthService(db, background_tasks)
     result = await auth_service.login(payload.email, payload.password)
 

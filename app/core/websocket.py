@@ -19,4 +19,9 @@ class ConnectionManager:
         if user_id in self.active_connections:
             for connection in self.active_connections[user_id]:
                 await connection.send_json(message)
+
+    async def broadcast(self, message: dict):
+        for connections in self.active_connections.values():
+            for ws in connections:
+                await ws.send_json(message)
 manager = ConnectionManager()

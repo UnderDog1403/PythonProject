@@ -3,9 +3,11 @@ import json
 from typing import Tuple, List, Dict, Any, Optional
 from fastapi import HTTPException
 from pydantic import TypeAdapter
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.redis import redis_client
 from app.modules.product.models.attribute_model import Attribute
+from app.modules.product.models.attribute_value_model import AttributeValue
 from app.modules.product.repositories.attribute_repository import AttributeRepository
 from app.modules.product.schemas.attribute_schema import AttributeResponseSchema
 from app.modules.product.schemas.attribute_value_schema import AttributeValueResponseSchema
@@ -14,6 +16,7 @@ from app.modules.product.schemas.attribute_value_schema import AttributeValueRes
 class AttributeService:
     def __init__(self, db: AsyncSession):
         self.repository = AttributeRepository(db)
+        self.db = db
     async def get_all(self)-> list[AttributeResponseSchema]:
 
         # try:
@@ -73,13 +76,32 @@ class AttributeService:
     #         )
 
     async def create(self, data: dict):
+        values_data = data.pop("values", [])
+        db_attribute_values = [
+            AttributeValue(**val_data)
+            for val_data in values_data
+        ]
+        db_attribute = Attribute(**data, values=db_attribute_values)
         try:
-            attribute =await self.repository.create(data)
-            return attribute
+            # 4. GỌI REPOSITORY (Repo của bạn đã có sẵn self.db.add và flush)
+            created_attribute = await self.repository.create(db_attribute)
+
+            # 5. CHỐT GIAO DỊCH
+            await self.db.commit()
+            await self.db.refresh(created_attribute, ["values"])
+            return created_attribute
+
+        except IntegrityError:
+            await self.db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail="Đã tồn tại dữ liệu."
+            )
         except Exception as e:
+            await self.db.rollback()
             raise HTTPException(
                 status_code=500,
-                detail=f"Internal server error while creating pizza: {str(e)}"
+                detail=f"Lỗi hệ thống không xác định: {str(e)}"
             )
     async def update(self, attribute_id: int, data: dict):
         try:

@@ -20,3 +20,9 @@ class Product(Base):
         onupdate=func.now()
     )
     variants = relationship("ProductVariant", back_populates="product")
+    options = relationship(
+        "Option",
+        secondary="product_options",
+        back_populates="products",
+        lazy="selectin"
+    )
