@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from uvicorn import lifespan
 
+from app.core.database import AsyncSessionLocal
 from app.core.dependencies import db_dependency
 from app.core.websocket import manager
 from app.modules.auth.routers.auth_router import AuthRouter
@@ -21,36 +22,46 @@ from app.modules.product.routers.product_variant_router import ProductVariantRou
 from app.modules.product.routers.variant_attribute_value_router import VariantAttributeValueRouter
 from app.modules.promotion.routers.voucher_router import VoucherRouter
 from app.modules.reservation.routers.dining_table_router import DiningTableRouter
+from app.modules.reservation.routers.dining_table_ws import router
 from app.modules.reservation.routers.reservation_router import ReservationRouter, AdminReservationRouter
 from app.modules.user.routers.user_router import UserRouter
 from app.modules.reservation.services.dining_table_service import DiningTableService
 
-service = DiningTableService(db_dependency)
 async def table_status_loop():
     while True:
-        tables = await service.admin_get_all_tables()
+        try:
+            async with AsyncSessionLocal() as db:
+                service = DiningTableService(db)
 
-        await manager.broadcast({
-            "type": "table_status",
-            "data": tables
-        })
+                tables = await service.admin_get_all_tables()
+
+                await manager.broadcast({
+                    "type": "table_status",
+                    "data": tables
+                })
+
+        except Exception as e:
+            print("Loop error:", e)
 
         await asyncio.sleep(30)
 
+#
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # STARTUP
     task = asyncio.create_task(table_status_loop())
+    print("Loop started")
 
-    yield  # app chạy ở đây
+    yield
 
-    # SHUTDOWN
     task.cancel()
     try:
         await task
     except asyncio.CancelledError:
-        pass
+        print("Loop stopped")
+
+
 app = FastAPI(lifespan=lifespan)
+# app = FastAPI()
 app.include_router(UserRouter)
 app.include_router(AuthRouter)
 app.include_router(CategoryRouter)
@@ -69,6 +80,7 @@ app.include_router(AdminOrderRouter)
 app.include_router(DiningTableRouter)
 app.include_router(ReservationRouter)
 app.include_router(AdminReservationRouter)
+app.include_router(router)
 
 
 @app.get("/")

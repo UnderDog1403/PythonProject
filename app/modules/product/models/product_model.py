@@ -10,7 +10,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, unique=True)
     name = Column(String(255), nullable=False, unique=True)
     description = Column(Text, nullable=True)
-    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
     image_url = Column(String(255), nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

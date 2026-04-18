@@ -155,10 +155,7 @@ class OrderService:
             new_order.total_amount = (running_subtotal - discount_amount) + calculated_shipping_fee
 
             await self.order_repo.create(new_order)
-
-        # 6. DỌN DẸP REDIS (Sau khi DB Transaction đã hoàn tất an toàn)
         await redis_client.hdel(f"cart:{user_id}", *selected_item_keys)
-
         return new_order
     async def get_all_by_user_id(self, user_id: str):
         orders = await self.order_repo.get_all_by_user_id(user_id)

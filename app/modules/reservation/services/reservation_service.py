@@ -45,7 +45,7 @@ class ReservationService:
                 status_code=500,
                 detail=f"Internal server error while creating pizza: {str(e)}"
             )
-    async def filter_reservations(self, data: dict):
+    async def admin_filter_reservations(self, data: dict):
         try:
             reservations = await self.repository.filter_reservations(data)
             return reservations

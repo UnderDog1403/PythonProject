@@ -11,7 +11,7 @@ class OptionValue(Base):
         UniqueConstraint("option_id", "value", name="uq_option_value"),
     )
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, unique=True)
-    option_id = Column(Integer, ForeignKey("options.id"), nullable=False)
+    option_id = Column(Integer, ForeignKey("options.id",ondelete="CASCADE"), nullable=False)
     value = Column(String(255), nullable=False)
     extra_price = Column(Integer, nullable=False, default=0)
     is_active = Column(Boolean, nullable=False, default=True)

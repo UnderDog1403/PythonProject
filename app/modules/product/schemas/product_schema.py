@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 from app.modules.product.schemas.attribute_schema import AttributeResponseSchema
+from app.modules.product.schemas.option_schema import OptionResponseSchema
 from app.modules.product.schemas.product_variant_schema import ProductVariantResponseSchema, ProductVariantCreateSchema
 
 
@@ -22,6 +23,7 @@ class ProductDetailResponseSchema(BaseModel):
     is_active: bool
     attributes: list[AttributeResponseSchema] | None = None
     variants: list[ProductVariantResponseSchema] | None = None
+    options: list[OptionResponseSchema] | None = None
     class Config:
         from_attributes = True
 class ProductCreateSchema(BaseModel):

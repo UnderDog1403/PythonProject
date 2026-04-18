@@ -10,7 +10,7 @@ class AttributeValue(Base):
         UniqueConstraint("attribute_id", "value", name="uq_attribute_value"),
     )
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, unique=True)
-    attribute_id = Column(Integer, ForeignKey("attributes.id"), nullable=False)
+    attribute_id = Column(Integer, ForeignKey("attributes.id", ondelete="CASCADE"), nullable=False)
     value = Column(String(255), nullable=False)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

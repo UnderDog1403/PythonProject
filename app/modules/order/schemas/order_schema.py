@@ -7,6 +7,16 @@ from datetime import datetime
 from app.modules.order.models.order_model import OrderType, PaymentMethod, PaymentStatus, OrderStatus
 
 
+class OrderResponseSchema(BaseModel):
+    id: int
+    total_amount: Decimal
+    status: OrderStatus
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class OrderCreateSchema(BaseModel):
     customer_name: str
     customer_phone: str
@@ -19,7 +29,7 @@ class CheckoutRequest(BaseModel):
     selected_items: list[str]
     checkout_info: OrderCreateSchema
 class OrderStatusUpdate(BaseModel):
-    status: str
+    status: OrderStatus
 class OrderItemOptionResponseSchema(BaseModel):
     option_value_name: str
     extra_price: float

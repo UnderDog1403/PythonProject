@@ -8,6 +8,7 @@ from sqlalchemy import asc, desc, select, func
 from sqlalchemy.orm import selectinload
 
 from app.modules.product.models.attribute_value_model import AttributeValue
+from app.modules.product.models.option_model import Option
 from app.modules.product.models.product_model import Product
 from app.modules.product.models.product_variant_model import ProductVariant
 
@@ -91,7 +92,9 @@ class ProductRepository:
             .options(
                 selectinload(Product.variants)
                 .selectinload(ProductVariant.attribute_values)
-                .selectinload(AttributeValue.attribute)
+                .selectinload(AttributeValue.attribute),
+                selectinload(Product.options)
+                .selectinload(Option.values)
             )
         )
         result = await self.db.execute(stmt)

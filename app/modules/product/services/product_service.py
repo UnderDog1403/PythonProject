@@ -127,6 +127,25 @@ class ProductService:
                         "value": value.value,
                         "is_active": value.is_active
                     })
+        options_data = [
+            {
+                "id": opt.id,
+                "name": opt.name,
+                "min_select": opt.min_select,
+                "max_select": opt.max_select,
+                "is_active": opt.is_active,
+                "values": [
+                    {
+                        "id": v.id,
+                        "value": v.value,
+                        "extra_price": v.extra_price,
+                        "is_active": v.is_active
+                    }
+                    for v in opt.values
+                ]
+            }
+            for opt in product.options
+        ] if product.options else []
 
         attributes_data = list(attributes_map.values())
         product_data = {
@@ -138,7 +157,8 @@ class ProductService:
             "is_active": product.is_active,
             "price": price,
             "variants": variants_data,
-            "attributes": attributes_data
+            "attributes": attributes_data,
+            "options": options_data
         }
         # 6. Cache Redis
         await redis_client.set(

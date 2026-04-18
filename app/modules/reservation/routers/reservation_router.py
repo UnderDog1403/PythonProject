@@ -37,7 +37,7 @@ async def create(
     result = await service.create(payload.model_dump(exclude_unset=True))
     return result
 
-@ReservationRouter.post(
+@AdminReservationRouter.post(
     "/filter",
     status_code=status.HTTP_200_OK,
     response_model=list[ReservationResponse]
@@ -47,7 +47,7 @@ async def filter_reservations(
         payload: ReservationFilter
 ):
     service = ReservationService(db)
-    reservations = await service.filter_reservations(payload.model_dump(exclude_unset=True))
+    reservations = await service.admin_filter_reservations(payload.model_dump(exclude_unset=True))
     return reservations
 @AdminReservationRouter.get(
     "/{reservation_id}/available-tables",

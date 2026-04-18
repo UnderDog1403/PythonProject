@@ -6,7 +6,8 @@ from starlette.websockets import WebSocketDisconnect
 from app.core.dependencies import db_dependency
 from app.core.security import get_current_user, verify_token, require_roles
 from app.core.websocket import manager
-from app.modules.order.schemas.order_schema import CheckoutRequest, OrderStatusUpdate, AdminOrderCreateSchema
+from app.modules.order.schemas.order_schema import CheckoutRequest, OrderStatusUpdate, AdminOrderCreateSchema, \
+    OrderResponseSchema
 from app.modules.order.services.order_service import OrderService
 router = APIRouter()
 OrderRouter = APIRouter(
@@ -17,22 +18,7 @@ AdminOrderRouter = APIRouter(
     prefix="/admin/orders",
     tags=["Admin Orders"]
 )
-@router.websocket("ws/orders")
-async def websocket_orders_endpoint(
-    websocket: WebSocket,
-    token: str
-):
-    user_id_str = verify_token(token)
-    if user_id_str is None:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
 
-    await manager.connect(websocket, user_id_str)
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(websocket, user_id_str)
 # ADMIN CREATE ORDER
 @AdminOrderRouter.post(
     "/",
@@ -123,6 +109,7 @@ async def admin_get_by_id(
 @OrderRouter.post(
     "/",
     status_code=status.HTTP_201_CREATED,
+    response_model=OrderResponseSchema
 )
 async def create(
     payload: CheckoutRequest,
