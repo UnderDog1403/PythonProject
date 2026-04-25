@@ -105,8 +105,6 @@ class ProductVariantRepository:
             return None
         for key, value in data.items():
             setattr(product_variant, key, value)
-        await self.db.commit()
-        await self.db.refresh(product_variant)
         return product_variant
 
     async def delete(self, product_variant_id: int) -> bool:

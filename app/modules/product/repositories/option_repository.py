@@ -19,7 +19,7 @@ class OptionRepository:
         result = await self.db.execute(stmt)
         return result.scalars().all()
     async def admin_get_all(self) -> Sequence[Option]:
-        stmt = select(Option)
+        stmt = select(Option).options(selectinload(Option.values))
         result = await self.db.execute(stmt)
         return result.scalars().all()
     # async def get_categories_paginated(
@@ -79,7 +79,9 @@ class OptionRepository:
     #
     #     return items, total, total_pages
     async def get_by_id(self, option_id: int) -> Optional[Option]:
-        stmt = select(Option).where(Option.id == option_id)
+        stmt = (select(Option)
+                .options(selectinload(Option.values))
+                .where(Option.id == option_id))
         result = await self.db.execute(stmt)
         return result.scalars().one_or_none()
     async def get_by_ids(self, option_ids: List[int]) -> Sequence[Option]:
@@ -101,8 +103,6 @@ class OptionRepository:
             return None
         for key, value in data.items():
             setattr(option, key, value)
-        await self.db.commit()
-        await self.db.refresh(option)
         return option
 
     async def delete(self, option_id: int) -> bool:

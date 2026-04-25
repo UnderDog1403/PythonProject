@@ -17,5 +17,6 @@ class Attribute(Base):
     )
     values = relationship(
         "AttributeValue",
-        back_populates="attribute"
+        back_populates="attribute",
+        cascade="all, delete-orphan"
     )

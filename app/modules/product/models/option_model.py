@@ -19,7 +19,8 @@ class Option(Base):
 
     values = relationship(
         "OptionValue",
-        back_populates="option"
+        back_populates="option",
+        cascade="all, delete-orphan"
     )
     products = relationship(
         "Product",

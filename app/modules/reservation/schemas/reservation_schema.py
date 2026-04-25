@@ -28,7 +28,6 @@ class ReservationResponse(BaseModel):
     class Config:
         from_attributes = True
 class ReservationCreate(BaseModel):
-    user_id: Optional[str] = None
     customer_name: str
     customer_phone: str
     guest_count: int
@@ -41,7 +40,6 @@ class ReservationFilter(BaseModel):
 class AdminConfirmReservationRequest(BaseModel):
     table_ids: list[int]
 class AdminReservationCreate(BaseModel):
-    user_id: Optional[str] = None
     customer_name: str
     customer_phone: str
     guest_count: int

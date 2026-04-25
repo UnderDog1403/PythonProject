@@ -85,8 +85,7 @@ class AttributeValueRepository:
     async def create(self, data: dict):
         attribute_value = AttributeValue(**data)
         self.db.add(attribute_value)
-        await self.db.commit()
-        await self.db.refresh(attribute_value)
+        await self.db.flush()
         return attribute_value
     async def update(
         self,
@@ -99,8 +98,6 @@ class AttributeValueRepository:
             return None
         for key, value in data.items():
             setattr(attribute_value, key, value)
-        await self.db.commit()
-        await self.db.refresh(attribute_value)
         return attribute_value
 
     async def delete(self, attribute_value_id: int) -> bool:

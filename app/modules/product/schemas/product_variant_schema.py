@@ -14,6 +14,7 @@ class ProductVariantCreateSchema(BaseModel):
     is_active: bool
     attribute_value_ids: list[int]
 class ProductVariantUpdateSchema(BaseModel):
+    id: int | None = None
     price: int | None = None
-    product_id: int | None = None
     is_active: bool | None = None
+    attribute_value_ids: list[int] | None = None

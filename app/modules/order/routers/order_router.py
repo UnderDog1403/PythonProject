@@ -67,17 +67,17 @@ async def update_order_status(
     return updated_order
 
 # ADMIN GET ALL ORDER BY USER_ID
-@AdminOrderRouter.get(
-    "/{user_id}",
-    status_code=status.HTTP_200_OK,
-)
-async def admin_get_all_by_user(
-    user_id: str,
-    db : db_dependency,
-    current_user=Depends(require_roles(["admin"]))
-):
-    order_service = OrderService(db)
-    return await order_service.get_all_by_user_id(user_id)
+# @AdminOrderRouter.get(
+#     "/{user_id}",
+#     status_code=status.HTTP_200_OK,
+# )
+# async def admin_get_all_by_user(
+#     user_id: str,
+#     db : db_dependency,
+#     current_user=Depends(require_roles(["admin"]))
+# ):
+#     order_service = OrderService(db)
+#     return await order_service.get_all_by_user_id(user_id)
 
 # ADMIN GET ALL ORDER
 @AdminOrderRouter.get(

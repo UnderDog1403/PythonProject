@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from starlette import status
 
 from app.core.dependencies import db_dependency
+from app.core.security import require_roles
 
 from app.modules.product.schemas.category_schema import (
     CategoryCreateSchema,
@@ -14,7 +15,23 @@ CategoryRouter = APIRouter(
     prefix="/categories",
     tags=["Categories"]
 )
+AdminCategoryRouter = APIRouter(
+    prefix="/admin/categories",
+    tags=["Admin Categories"]
+)
+@AdminCategoryRouter.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model= list[CategoryResponseSchema]
+)
+async def admin_get_all(
+    db:  db_dependency,
+    current_user=Depends(require_roles(["admin"]))
+):
+    category_service = CategoryService(db)
 
+    categories = await category_service.admin_get_all()
+    return categories
 @CategoryRouter.get(
     "/",
     status_code=status.HTTP_200_OK,

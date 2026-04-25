@@ -20,13 +20,17 @@ class ProductRepository:
     async def get_all(self):
         stmt = (
             select(Product)
-            .options(selectinload(Product.variants))
+            .where(Product.is_active == True)
+            .options(
+                selectinload(Product.variants.and_(ProductVariant.is_active == True))
+            )
         )
-
         result = await self.db.execute(stmt)
         return result.scalars().all()
     async def admin_get_all(self) -> Sequence[Product]:
-        stmt = select(Product)
+        stmt = (select(Product)
+                .options(selectinload(Product.variants))
+                )
         result = await self.db.execute(stmt)
         return result.scalars().all()
     # async def get_categories_paginated(

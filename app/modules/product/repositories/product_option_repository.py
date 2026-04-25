@@ -75,8 +75,6 @@ class ProductOptionRepository:
     async def create(self, data: dict):
         product_option = ProductOption(**data)
         self.db.add(product_option)
-        await self.db.commit()
-        await self.db.refresh(product_option)
         return product_option
     async def delete(self, product_id, option_id):
         stmt = select(ProductOption).where(

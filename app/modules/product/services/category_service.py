@@ -64,7 +64,9 @@ class CategoryService:
     #             status_code=500,
     #             detail="Internal server error while retrieving categories"
     #         )
-
+    async def admin_get_all(self) -> list[CategoryResponseSchema]:
+        categories = await self.repository.admin_get_all()
+        return categories
     async def create(self, data: dict):
         try:
             category =await self.repository.create(data)

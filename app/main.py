@@ -10,11 +10,11 @@ from app.core.websocket import manager
 from app.modules.auth.routers.auth_router import AuthRouter
 from app.modules.cart.routers.cart_router import CartRouter
 from app.modules.order.routers.order_router import OrderRouter, AdminOrderRouter
-from app.modules.product.routers.attribute_router import AttributeRouter
+from app.modules.product.routers.attribute_router import AttributeRouter, AdminAttributeRouter
 from app.modules.product.routers.attribute_value_router import AttributeValueRouter
 
-from app.modules.product.routers.category_router import CategoryRouter
-from app.modules.product.routers.option_router import OptionRouter
+from app.modules.product.routers.category_router import CategoryRouter, AdminCategoryRouter
+from app.modules.product.routers.option_router import OptionRouter, AdminOptionRouter
 from app.modules.product.routers.option_value_router import OptionValueRouter
 from app.modules.product.routers.product_option_router import ProductOptionRouter
 from app.modules.product.routers.product_router import ProductRouter
@@ -65,14 +65,13 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(UserRouter)
 app.include_router(AuthRouter)
 app.include_router(CategoryRouter)
+app.include_router(AdminCategoryRouter)
 app.include_router(ProductRouter)
 app.include_router(ProductVariantRouter)
 app.include_router(AttributeRouter)
-app.include_router(AttributeValueRouter)
-app.include_router(VariantAttributeValueRouter)
+app.include_router(AdminAttributeRouter)
 app.include_router(OptionRouter)
-app.include_router(OptionValueRouter)
-app.include_router(ProductOptionRouter)
+app.include_router(AdminOptionRouter)
 app.include_router(CartRouter)
 app.include_router(VoucherRouter)
 app.include_router(OrderRouter)
@@ -81,6 +80,7 @@ app.include_router(DiningTableRouter)
 app.include_router(ReservationRouter)
 app.include_router(AdminReservationRouter)
 app.include_router(router)
+
 
 
 @app.get("/")

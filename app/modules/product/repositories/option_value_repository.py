@@ -89,8 +89,6 @@ class OptionValueRepository:
     async def create(self, data: dict):
         option_value = OptionValue(**data)
         self.db.add(option_value)
-        await self.db.commit()
-        await self.db.refresh(option_value)
         return option_value
     async def update(
         self,
@@ -103,8 +101,6 @@ class OptionValueRepository:
             return None
         for key, value in data.items():
             setattr(option_value, key, value)
-        await self.db.commit()
-        await self.db.refresh(option_value)
         return option_value
 
     async def delete(self, option_value_id: int) -> bool:

@@ -19,7 +19,7 @@ class AttributeRepository:
         result = await self.db.execute(stmt)
         return result.scalars().all()
     async def admin_get_all(self) -> Sequence[Attribute]:
-        stmt = select(Attribute)
+        stmt = select(Attribute).options(selectinload(Attribute.values))
         result = await self.db.execute(stmt)
         return result.scalars().all()
     # async def get_categories_paginated(
@@ -79,7 +79,9 @@ class AttributeRepository:
     #
     #     return items, total, total_pages
     async def get_by_id(self, attribute_id: int) -> Optional[Attribute]:
-        stmt = select(Attribute).where(Attribute.id == attribute_id)
+        stmt = (select(Attribute)
+                .options(selectinload(Attribute.values))
+                .where(Attribute.id == attribute_id))
         result = await self.db.execute(stmt)
         return result.scalars().one_or_none()
     async def create(self, obj: Attribute) -> Attribute:
@@ -97,8 +99,6 @@ class AttributeRepository:
             return None
         for key, value in data.items():
             setattr(attribute, key, value)
-        await self.db.commit()
-        await self.db.refresh(attribute)
         return attribute
 
     async def delete(self, attribute_id: int) -> bool:

@@ -14,7 +14,23 @@ AttributeRouter = APIRouter(
     prefix="/attributes",
     tags=["Attributes"]
 )
+AdminAttributeRouter = APIRouter(
+    prefix="/admin/attributes",
+    tags=["Admin Attributes"]
+)
+@AdminAttributeRouter.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model= list[AttributeResponseSchema]
+)
+async def admin_get_all(
+    db:  db_dependency
+    # current_user=Depends(require_roles(["admin"]))
+):
+    attribute_service = AttributeService(db)
 
+    attributes = await attribute_service.admin_get_all()
+    return attributes
 @AttributeRouter.get(
     "/",
     status_code=status.HTTP_200_OK,
@@ -28,6 +44,18 @@ async def get_all(
 
     attributes = await attribute_service.get_all()
     return attributes
+@AttributeRouter.get(
+    "/{attribute_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=AttributeResponseSchema)
+async def get_by_id(
+    attribute_id: int,
+    db:  db_dependency
+    # current_user=Depends(require_roles(["admin", "user"]))
+):
+    service = AttributeService(db)
+    attribute = await service.get_by_id(attribute_id)
+    return attribute
 @AttributeRouter.post(
     "/",
     status_code=status.HTTP_201_CREATED,
@@ -58,9 +86,8 @@ async def update_attribute(
 ):
     service = AttributeService(db)
     update_data = payload.model_dump(exclude_unset=True)
-    return await service.update(
-        attribute_id=attribute_id,
-        data=update_data
+    return await service.update_with_attribute_value(
+        attribute_id,update_data
     )
 @AttributeRouter.delete(
     "/{attribute_id}",

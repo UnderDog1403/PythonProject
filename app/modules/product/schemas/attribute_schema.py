@@ -1,7 +1,8 @@
 
 from pydantic import BaseModel
 
-from app.modules.product.schemas.attribute_value_schema import AttributeValueResponseSchema, AttributeValueCreateSchema
+from app.modules.product.schemas.attribute_value_schema import AttributeValueResponseSchema, AttributeValueCreateSchema, \
+    AttributeValueUpdateSchema
 
 
 class AttributeResponseSchema(BaseModel):
@@ -18,3 +19,4 @@ class AttributeCreateSchema(BaseModel):
 class AttributeUpdateSchema(BaseModel):
     name: str | None = None
     is_active: bool | None = None
+    values: list[AttributeValueUpdateSchema]

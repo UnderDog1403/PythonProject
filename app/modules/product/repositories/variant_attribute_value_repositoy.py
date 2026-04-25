@@ -71,12 +71,13 @@ class VariantAttributeValueRepository:
     #     total_pages = (total + limit - 1) // limit if limit > 0 else 0
     #
     #     return items, total, total_pages
-
+    async def get_by_variant_id(self, variant_id: int) -> Sequence[VariantAttributeValue]:
+        stmt = select(VariantAttributeValue).where(VariantAttributeValue.variant_id == variant_id)
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
     async def create(self, data: dict):
         variant_attribute_value = VariantAttributeValue(**data)
         self.db.add(variant_attribute_value)
-        await self.db.commit()
-        await self.db.refresh(variant_attribute_value)
         return variant_attribute_value
     async def delete(self, variant_id, attribute_value_id):
         stmt = select(VariantAttributeValue).where(
@@ -88,7 +89,6 @@ class VariantAttributeValueRepository:
         if not variant_attribute_value:
             return False
         await self.db.delete(variant_attribute_value)
-        await self.db.commit()
         return True
 
 

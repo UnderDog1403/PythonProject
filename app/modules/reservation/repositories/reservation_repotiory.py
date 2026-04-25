@@ -11,9 +11,19 @@ class ReservationRepository:
         self.db = db
 
     async def get_by_id(self, reservation_id: int):
-        stmt = select(Reservation).where(Reservation.id == reservation_id)
+        stmt = (select(Reservation)
+                .options(selectinload(Reservation.tables))
+                .where(Reservation.id == reservation_id))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_by_user_id(self, user_id: str):
+        stmt = (select(Reservation)
+                .options(selectinload(Reservation.tables))
+                .where(Reservation.user_id == user_id))
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
+
     async def filter_reservations(self, data: dict):
         stmt = select(Reservation)
         conditions = []
@@ -72,6 +82,10 @@ class ReservationRepository:
                 Reservation.status == "confirmed"
             )
         )).scalars().all()
-        occupied_table_ids = {r.dining_table_id for r in reservations}
+        occupied_table_ids = {
+            table.id
+            for r in reservations
+            for table in r.tables
+        }
         available_tables = [t for t in tables if t.id not in occupied_table_ids]
         return available_tables

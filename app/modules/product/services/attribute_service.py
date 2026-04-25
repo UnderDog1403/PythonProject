@@ -9,6 +9,7 @@ from app.core.redis import redis_client
 from app.modules.product.models.attribute_model import Attribute
 from app.modules.product.models.attribute_value_model import AttributeValue
 from app.modules.product.repositories.attribute_repository import AttributeRepository
+from app.modules.product.repositories.attribute_value_repository import AttributeValueRepository
 from app.modules.product.schemas.attribute_schema import AttributeResponseSchema
 from app.modules.product.schemas.attribute_value_schema import AttributeValueResponseSchema
 
@@ -16,6 +17,7 @@ from app.modules.product.schemas.attribute_value_schema import AttributeValueRes
 class AttributeService:
     def __init__(self, db: AsyncSession):
         self.repository = AttributeRepository(db)
+        self.attribute_value_repo = AttributeValueRepository(db)
         self.db = db
     async def get_all(self)-> list[AttributeResponseSchema]:
 
@@ -44,6 +46,25 @@ class AttributeService:
         #         status_code=500,
         #         detail="Internal server error while retrieving attributes"
         #     )
+    async def admin_get_all(self)-> list[AttributeResponseSchema]:
+        attributes = await self.repository.admin_get_all()
+        return attributes
+    async def get_by_id(self, attribute_id: int) -> Optional[AttributeResponseSchema]:
+        try:
+            attribute = await self.repository.get_by_id(attribute_id)
+            if not attribute:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Attribute not found"
+                )
+            return attribute
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(
+                status_code=500,
+                detail="Internal server error while retrieving attribute"
+            )
     # async def get_attributes_paginated(
     #     self,
     #     page: int = 1,
@@ -103,22 +124,26 @@ class AttributeService:
                 status_code=500,
                 detail=f"Lỗi hệ thống không xác định: {str(e)}"
             )
-    async def update(self, attribute_id: int, data: dict):
-        try:
+    async def update_with_attribute_value(self, attribute_id: int, data: dict):
+        async with self.db.begin():
+            values_data = data.pop("values",[])
             attribute = await self.repository.update(attribute_id, data)
             if not attribute:
                 raise HTTPException(
                     status_code=404,
                     detail=f"Attribute not found"
                 )
-            return attribute
-        except HTTPException:
-            raise
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Internal server error while updating pizza: {str(e)}"
-            )
+            for val_data in values_data:
+                val_data["attribute_id"] = attribute_id
+                if "id" in val_data:
+                    await self.attribute_value_repo.update(
+                        val_data["id"],
+                        val_data
+                    )
+                else:
+                    await self.attribute_value_repo.create(val_data)
+        await self.db.refresh(attribute, ["values"])
+        return attribute
     async def delete(self, attribute_id: int) -> bool:
         try:
             deleted = await self.repository.delete(attribute_id)

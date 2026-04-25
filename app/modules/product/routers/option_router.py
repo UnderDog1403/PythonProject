@@ -14,7 +14,23 @@ OptionRouter = APIRouter(
     prefix="/options",
     tags=["Options"]
 )
+AdminOptionRouter = APIRouter(
+    prefix="/admin/options",
+    tags=["Admin Options"]
+)
+@AdminOptionRouter.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model= list[OptionResponseSchema]
+)
+async def admin_get_all(
+    db:  db_dependency
+    # current_user=Depends(require_roles(["admin"]))
+):
+    option_service = OptionService(db)
 
+    options = await option_service.admin_get_all()
+    return options
 @OptionRouter.get(
     "/",
     status_code=status.HTTP_200_OK,
@@ -28,7 +44,18 @@ async def get_all(
 
     options = await option_service.get_all()
     return options
-
+@OptionRouter.get(
+    "/{option_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=OptionResponseSchema)
+async def get_by_id(
+    option_id: int,
+    db:  db_dependency
+    # current_user=Depends(require_roles(["admin", "user"]))
+):
+    service = OptionService(db)
+    option = await service.get_by_id(option_id)
+    return option
 
 
 @OptionRouter.post(
@@ -60,7 +87,7 @@ async def update_option(
 ):
     service = OptionService(db)
     update_data = payload.model_dump(exclude_unset=True)
-    return await service.update(
+    return await service.update_with_option_value(
         option_id=option_id,
         data=update_data
     )

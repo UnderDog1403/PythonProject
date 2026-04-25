@@ -9,15 +9,20 @@ from app.core.redis import redis_client
 from app.modules.product.models.option_model import Option
 from app.modules.product.models.option_value_model import OptionValue
 from app.modules.product.repositories.option_repository import OptionRepository
+from app.modules.product.repositories.option_value_repository import OptionValueRepository
 from app.modules.product.schemas.option_schema import OptionResponseSchema
 
 
 class OptionService:
     def __init__(self, db: AsyncSession):
         self.repository = OptionRepository(db)
+        self.option_value_repo = OptionValueRepository(db)
         self.db = db
     async def get_all(self)-> list[OptionResponseSchema]:
         options = await self.repository.get_all()
+        return options
+    async def admin_get_all(self)-> list[OptionResponseSchema]:
+        options = await self.repository.admin_get_all()
         return options
     # async def get_options_paginated(
     #     self,
@@ -49,6 +54,24 @@ class OptionService:
     #             status_code=500,
     #             detail="Internal server error while retrieving options"
     #         )
+    async def get_by_id(self, option_id: int) -> Optional[Option]:
+        try:
+            option = await self.repository.get_by_id(option_id)
+            if not option:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Option not found"
+                )
+            return option
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(
+                status_code=500,
+                detail="Internal server error while retrieving option"
+            )
+
+
     async def create_option_with_values(self, data: dict):
         values_data = data.pop("values", [])
         db_option_values = [
@@ -78,22 +101,26 @@ class OptionService:
                 detail=f"Lỗi hệ thống không xác định: {str(e)}"
             )
 
-    async def update(self, option_id: int, data: dict):
-        try:
+    async def update_with_option_value(self, option_id: int, data: dict):
+        async with self.db.begin():
+            values_data = data.pop("values", [])
             option = await self.repository.update(option_id, data)
             if not option:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Option not found"
+                    detail=f"Attribute not found"
                 )
-            return option
-        except HTTPException:
-            raise
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Internal server error while updating pizza: {str(e)}"
-            )
+            for val_data in values_data:
+                val_data["option_id"] = option_id
+                if "id" in val_data:
+                    await self.option_value_repo.update(
+                        val_data["id"],
+                        val_data
+                    )
+                else:
+                    await self.option_value_repo.create(val_data)
+        await self.db.refresh(option, ["values"])
+        return option
     async def delete(self, option_id: int) -> bool:
         try:
             deleted = await self.repository.delete(option_id)

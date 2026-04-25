@@ -25,14 +25,11 @@ async def websocket_tables_endpoint(
     await manager.connect(websocket, user_id_str)
     async with AsyncSessionLocal() as db:
         service = DiningTableService(db)
-
         tables = await service.admin_get_all_tables()
-
         await websocket.send_json({
             "type": "init",
             "data": tables
         })
-
     try:
         while True:
             await websocket.receive_text()

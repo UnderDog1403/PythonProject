@@ -2,7 +2,8 @@ from pydantic import BaseModel
 
 from app.modules.product.schemas.attribute_schema import AttributeResponseSchema
 from app.modules.product.schemas.option_schema import OptionResponseSchema
-from app.modules.product.schemas.product_variant_schema import ProductVariantResponseSchema, ProductVariantCreateSchema
+from app.modules.product.schemas.product_variant_schema import ProductVariantResponseSchema, ProductVariantCreateSchema, \
+    ProductVariantUpdateSchema
 
 
 class ProductResponseSchema(BaseModel):
@@ -12,6 +13,7 @@ class ProductResponseSchema(BaseModel):
     image_url: str | None = None
     category_id: int
     is_active: bool
+    price: float | None = None
     class Config:
         from_attributes = True
 class ProductDetailResponseSchema(BaseModel):
@@ -40,3 +42,5 @@ class ProductUpdateSchema(BaseModel):
     category_id: int | None = None
     image_url: str | None = None
     is_active: bool | None = None
+    options: list[int] | None = None
+    variants: list[ProductVariantUpdateSchema]

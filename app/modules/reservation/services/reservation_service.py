@@ -1,8 +1,10 @@
 from datetime import timedelta
 
 from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.reservation.models import DiningTable
 from app.modules.reservation.models.reservation_model import Reservation
 from app.modules.reservation.repositories.dining_table_repository import DiningTableRepository
 from app.modules.reservation.repositories.reservation_repotiory import ReservationRepository
@@ -27,23 +29,39 @@ class ReservationService:
         try:
             start_time = data.get("start_time")
             end_time = start_time+ timedelta(hours=1)
-            available_tables = await self.repository.get_available_tables(
-                data["start_time"], end_time
-            )
-            total_seats = sum(table.capacity for table in available_tables)
-            if total_seats < data["guest_count"]:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Not enough available tables for the requested time slot"
+            async with self.db.begin():
+                result = await self.db.execute(
+                    select(DiningTable)
+                    .with_for_update()
                 )
-            reservation = await self.repository.create(Reservation(**data, end_time=end_time))
-            await self.db.commit()
-            await self.db.refresh(reservation)
-            return reservation
+                locked_tables = result.scalars().all()
+                available_tables = await self.repository.get_available_tables(
+                    data["start_time"], end_time
+                )
+                total_seats = sum(table.capacity for table in available_tables)
+                if total_seats < data["guest_count"]:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Not enough available tables for the requested time slot"
+                    )
+                reservation = await self.repository.create(Reservation(**data, end_time=end_time))
+                await self.db.commit()
+                await self.db.refresh(reservation)
+                return reservation
         except Exception as e:
             raise HTTPException(
                 status_code=500,
                 detail=f"Internal server error while creating pizza: {str(e)}"
+            )
+
+    async def user_get_reservations(self, user_id: str):
+        try:
+            reservations = await self.repository.get_by_user_id(user_id)
+            return reservations
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Internal server error while retrieving reservations: {str(e)}"
             )
     async def admin_filter_reservations(self, data: dict):
         try:
@@ -55,7 +73,7 @@ class ReservationService:
                 detail=f"Internal server error while filtering reservations: {str(e)}"
             )
     async def admin_get_available_tables_for_reservation(self, reservation_id: int):
-        try:
+        # try:
             reservation = await self.repository.get_by_id(reservation_id)
             if not reservation:
                 raise HTTPException(
@@ -66,11 +84,11 @@ class ReservationService:
                 reservation.start_time, reservation.end_time
             )
             return available_tables
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Internal server error while retrieving available tables: {str(e)}"
-            )
+        # except Exception as e:
+        #     raise HTTPException(
+        #         status_code=500,
+        #         detail=f"Internal server error while retrieving available tables: {str(e)}"
+        #     )
     async def admin_confirm_reservation(self, reservation_id: int, table_ids: list[int]):
         reservation = await self.repository.get_by_id(reservation_id)
         if not reservation:

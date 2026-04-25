@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
-from app.modules.product.schemas.option_value_schema import OptionValueCreateSchema, OptionValueResponseSchema
+from app.modules.product.schemas.option_value_schema import OptionValueCreateSchema, OptionValueResponseSchema, \
+    OptionValueUpdateSchema
 
 
 class OptionResponseSchema(BaseModel):
@@ -25,3 +26,4 @@ class OptionUpdateSchema(BaseModel):
     min_select: int
     max_select: int
     is_active: bool
+    values: list[OptionValueUpdateSchema]

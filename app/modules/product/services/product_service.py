@@ -1,6 +1,6 @@
 # modules/product/services/product_service.py
 import json
-from typing import Tuple, List, Dict, Any, Optional
+from typing import Tuple, List, Dict, Any, Optional, Coroutine, Sequence
 from fastapi import HTTPException
 from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +12,7 @@ from app.modules.product.repositories.option_repository import OptionRepository
 from app.modules.product.repositories.product_option_repository import ProductOptionRepository
 from app.modules.product.repositories.product_repostiory import ProductRepository
 from app.modules.product.repositories.product_variant_repository import ProductVariantRepository
+from app.modules.product.repositories.variant_attribute_value_repositoy import VariantAttributeValueRepository
 from app.modules.product.schemas.product_schema import ProductResponseSchema, ProductDetailResponseSchema
 
 
@@ -23,11 +24,8 @@ class ProductService:
         self.option_repo = OptionRepository(db)
         self.variant_repo = ProductVariantRepository(db)
         self.attribute_value_repo = AttributeValueRepository(db)
+        self.variant_attribute_value_repo = VariantAttributeValueRepository(db)
     async def get_all(self)-> list[ProductResponseSchema]:
-        cached_item = await redis_client.get(f"items:products:all")
-        if cached_item:
-            data = json.loads(cached_item)
-            return TypeAdapter(List[ProductResponseSchema]).validate_python(data)
         # try:
         products = await self.repository.get_all()
         products_data = []
@@ -42,11 +40,6 @@ class ProductService:
                 "is_active": product.is_active,
                 "price": price
             })
-        await redis_client.set(
-                f"items:products:all",
-                json.dumps(products_data),
-                ex=3600  # cache for 1 hour
-            )
         return TypeAdapter(List[ProductResponseSchema]).validate_python(products_data)
         # except Exception:
         #     raise HTTPException(
@@ -83,12 +76,10 @@ class ProductService:
     #             status_code=500,
     #             detail="Internal server error while retrieving products"
     #         )
+    async def admin_get_all(self) -> Sequence[Product]:
+        products = await self.repository.admin_get_all()
+        return products
     async def get_by_id(self, product_id: int) -> Optional[ProductDetailResponseSchema]:
-        cache_key = f"items:products:{product_id}"
-        cached_item = await redis_client.get(cache_key)
-        if cached_item:
-            data = json.loads(cached_item)
-            return TypeAdapter(ProductDetailResponseSchema).validate_python(data)
         product = await self.repository.get_by_id(product_id)
         if not product:
             raise HTTPException(
@@ -160,12 +151,6 @@ class ProductService:
             "attributes": attributes_data,
             "options": options_data
         }
-        # 6. Cache Redis
-        await redis_client.set(
-            cache_key,
-            json.dumps(product_data),
-            ex=3600
-        )
 
         # 7. Return schema
         return TypeAdapter(ProductDetailResponseSchema).validate_python(product_data)
@@ -212,9 +197,6 @@ class ProductService:
             await self.repository.db.commit()
             await self.repository.db.refresh(product)
 
-            # Xóa cache Redis
-            await redis_client.delete("items:products:all")
-
             return product
 
         except Exception as e:
@@ -225,24 +207,53 @@ class ProductService:
                 detail=f"Internal server error while creating product: {str(e)}"
             )
     async def update(self, product_id: int, data: dict):
-        try:
+        async with self.db.begin():
+            option_ids = data.pop("options", [])
+            variants_data = data.pop("variants", [])
             product = await self.repository.update(product_id, data)
             if not product:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Product not found"
+                    detail="Product not found"
                 )
-            await redis_client.delete("items:products:all")
-            return product
-        except HTTPException:
-            raise
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Internal server error while updating pizza: {str(e)}"
-            )
+            await self.db.refresh(product, ["options", "variants"])
+            existing_option_ids = {opt.id for opt in product.options}
+            incoming_option_ids = set(option_ids)
+            for oid in incoming_option_ids - existing_option_ids:
+                await self.product_options_repo.create({
+                    "product_id": product.id,
+                    "option_id": oid
+                })
+            for oid in existing_option_ids - incoming_option_ids:
+                await self.product_options_repo.delete(product.id, oid)
+            existing_variants = {v.id: v for v in product.variants}
+            incoming_variant_ids = set()
+            for v_data in variants_data:
+                attr_value_ids = v_data.pop("attribute_value_ids", [])
+                if v_data.get("id"):
+                    vid = v_data["id"]
+                    incoming_variant_ids.add(vid)
+                    variant = await self.variant_repo.update(vid, v_data)
+                else:
+                    v_data["product_id"] = product.id
+                    v_data.setdefault("is_active", True)
+                    variant = await self.variant_repo.create(v_data)
+                    vid = variant.id
+                existing_attr = await self.variant_attribute_value_repo.get_by_variant_id(vid)
+                existing_attr_ids = {e.attribute_value_id for e in existing_attr}
+                incoming_attr_ids = set(attr_value_ids)
+                for aid in incoming_attr_ids - existing_attr_ids:
+                    await self.variant_attribute_value_repo.create({
+                        "variant_id": vid,
+                        "attribute_value_id": aid
+                    })
+                for aid in existing_attr_ids - incoming_attr_ids:
+                    await self.variant_attribute_value_repo.delete(vid, aid)
+        await self.repository.db.refresh(product)
+        return product
+
     async def delete(self, product_id: int) -> bool:
-        try:
+        # try:
             deleted = await self.repository.delete(product_id)
             if not deleted:
                 raise HTTPException(
@@ -251,10 +262,10 @@ class ProductService:
                 )
             await redis_client.delete("items:products:all")
             return True
-        except HTTPException:
-            raise
-        except Exception:
-            raise HTTPException(
-                status_code=500,
-                detail="Internal server error while deleting product"
-            )
+        # except HTTPException:
+        #     raise
+        # except Exception:
+        #     raise HTTPException(
+        #         status_code=500,
+        #         detail="Internal server error while deleting product"
+        #     )
